@@ -1,0 +1,22 @@
+# SignBridge – Where Voices and Signs Meet
+
+##  Overview
+SignBridge is an inclusive e-learning platform designed for deaf and mute students, inspired by Google Classroom. It allows teachers to create classes, upload lecture materials (text, PDFs, documents, and videos), and post announcements, while students can view content, add comments, and ask questions. Lecture videos include text captions and a sign language avatar that translates content into sign language. Students can submit queries through text or by uploading or recording sign language videos, which are automatically translated into text for teachers, enabling seamless two-way communication.
+
+## Features
+- Virtual classroom management for teachers  
+- Accessible lecture content with captions and sign language avatar  
+- Student interaction via text and sign language video comments  
+- AI-based sign language to text translation  
+- Inclusive learning environment for hearing-impaired users  
+
+##  Tech Stack
+- **Backend:** Django, Django REST Framework (DRF)  
+- **Frontend:** React.js  
+- **Database:** PostgreSQL  
+
+##  Purpose
+This project aims to bridge the communication gap between teachers and deaf or mute students by integrating accessibility-focused technologies into modern online education.
+
+## Final Year Project
+This project is developed as a **Final Year Project (FYP)** to promote inclusive and accessible education using AI and web technologies.
