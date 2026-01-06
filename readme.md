@@ -160,5 +160,3 @@ This project is developed as a **Final Year Project**, demonstrating a **full-st
 * Frontend API calls use Axios; endpoints are defined in `frontend/src/api/`.
 * PostgreSQL server runs locally on port `5432`.
 * Keep `.env` secret; **do not commit it** to Git.
-
-```
