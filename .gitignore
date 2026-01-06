@@ -1,33 +1,46 @@
-# Python
+# =========================
+# Python / Django
+# =========================
 __pycache__/
 *.py[cod]
+*.pyo
 *.env
 *.sqlite3
-
-# Virtual environment
-venv/
-ENV/
-env/
-
-# Django specific
 *.log
 *.pot
-*.pyc
-*.pyo
 db.sqlite3
 media/
 staticfiles/
 
+# =========================
+# Virtual environment
+# =========================
+venv/
+ENV/
+env/
+
+# =========================
 # VS Code
+# =========================
 .vscode/
 *.code-workspace
 
+# =========================
 # Node / React frontend
+# =========================
 frontend/node_modules/
 frontend/dist/
-frontend/.env
 frontend/.vite/
+frontend/.env
 
-# MacOS / Windows
+# =========================
+# OS / System files
+# =========================
 .DS_Store
 Thumbs.db
+
+# =========================
+# Optional caches
+# =========================
+*.cache
+*.tmp
