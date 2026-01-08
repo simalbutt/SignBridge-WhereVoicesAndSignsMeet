@@ -1,15 +1,8 @@
 import React from "react";
-// import { testBackend } from "./api/test";
-
+import LandingPage from "./pages/LandingPage";
+import Navbar from "./components/Navbar";
 function App() {
-  return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-red-500 text-4xl font-bold">
-        Tailwind Works!
-      </h1>
-    </div>
-  );
+  return <Navbar />;
 }
 
 export default App;
-
