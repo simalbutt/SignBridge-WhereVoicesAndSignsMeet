@@ -6,14 +6,14 @@ const Navbar = () => {
       <div className="w-full">
         <div className="flex justify-between items-center h-12 px-4">
 
-          {/* Left: Logo - Completely flush left */}
+          
           <div className="flex-shrink-0">
             <span className="text-xl font-semibold text-white">
               SignBridge
             </span>
           </div>
 
-          {/* Right: Links - Completely flush right */}
+        
           <div className="flex gap-4">
             <a 
               href="/login" 
