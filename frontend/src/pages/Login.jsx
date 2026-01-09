@@ -25,8 +25,6 @@ const Login = () => {
     localStorage.setItem("refreshToken", refresh);
     localStorage.setItem("userRole", userRole);
     localStorage.setItem("userName", name);
-
-    console.log("Login successful:", res.data);
     alert(res.data.message || "Login successful!");
     navigate(userRole === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
   };
