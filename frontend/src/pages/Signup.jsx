@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { signupUser } from "../api/api";
 
+
 const Signup = () => {
   const [role, setRole] = useState("student"); 
   const [name, setName] = useState("");
@@ -126,7 +127,6 @@ const Signup = () => {
         </p>
       </div>
     </div>
-
   );
 };
 
