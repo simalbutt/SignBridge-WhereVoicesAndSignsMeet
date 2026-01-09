@@ -1,17 +1,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Avatar from "../components/Avatar";
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-r from-teal-100 to-cyan-100 flex items-start justify-center px-4 pt-16 md:pt-24">
-      <div className="max-w-6xl w-full flex flex-col md:flex-row items-start justify-between p-8 md:p-16">
-
-        <div className="flex-1 mb-10 md:mb-0 md:pr-8 text-center md:text-left">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-teal-800 mb-4">
-            SignBridge – Where Voices and Signs Meet
+    <div className="min-h-[calc(100vh-70px)]  bg-gradient-to-r from-teal-100 to-cyan-100 flex items-start justify-center px-4 pt-6 md:pt-12">
+      <div className="max-w-6xl w-full flex flex-col md:flex-row items-start justify-between ">
+        <div className="flex-1 mb-6 md:mb-0 md:pr-6 text-center md:text-left">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-teal-800 mb-2 mt-10">
+            SignBridge
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-cyan-700 italic mb-6">
-            "Connecting learners and educators through the language of signs, 
+          <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-teal-700 mb-4">
+            Where Voices and Signs Meet
+          </h2>
+
+          <p className="text-base sm:text-lg md:text-xl text-cyan-700 italic mt-10 mb-10">
+            "Connecting learners and educators through the language of signs,
             making knowledge accessible to everyone."
           </p>
 
@@ -31,10 +35,14 @@ const LandingPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 flex justify-center md:justify-end w-full md:w-auto">
-          Animation
+        <div className="flex-1 flex justify-center  w-full md:w-auto">
+          <div
+            className="relative w-full h-96 md:w-full md:h-[28rem] bg-no-repeat bg-center bg-cover rounded-lg"
+            style={{ backgroundImage: "url('assets/backgroundlanding.jpg')" }}
+          >
+            <Avatar />
+          </div>
         </div>
-
       </div>
     </div>
   );
