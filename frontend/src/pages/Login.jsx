@@ -38,7 +38,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-70px)] bg-gradient-to-r from-teal-100 to-cyan-100 flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-63px)] bg-gradient-to-r from-teal-100 to-cyan-100 flex items-center justify-center px-4">
       <div className="bg-white shadow-xl rounded-xl w-full max-w-md p-6 sm:p-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-teal-800 text-center mb-2">
           Welcome Back
