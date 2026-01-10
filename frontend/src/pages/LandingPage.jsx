@@ -4,7 +4,7 @@ import Avatar from "../components/Avatar";
 
 const LandingPage = () => {
   return (
-    <div className="min-h-[calc(100vh-70px)]  bg-gradient-to-r from-teal-100 to-cyan-100 flex items-start justify-center px-4 pt-6 md:pt-12">
+    <div className="min-h-[calc(100vh-63px)]  bg-gradient-to-r from-teal-100 to-cyan-100 flex items-start justify-center px-4 pt-6 md:pt-12">
       <div className="max-w-6xl w-full flex flex-col md:flex-row items-start justify-between ">
         <div className="flex-1 mb-6 md:mb-0 md:pr-6 text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-teal-800 mb-2 mt-10">
