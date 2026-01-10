@@ -20,15 +20,35 @@ const Signup = () => {
       return;
     }
 
-    const res = await auth.signup({ name, email, password, role });
+    try {
+      const res = await auth.signup({ name, email, password, role });
 
-    if (!res.data.success) {
-      setError(res.data.message || "Signup failed!");
-      return;
+      if (!res.data.success) {
+        setError(res.data.message || "Signup failed!");
+        return;
+      }
+
+      const loginRes = await auth.login({ email, password, role });
+      if (loginRes.data.success) {
+        const { access, refresh, name: userName, role: userRole } = loginRes.data.data;
+
+        localStorage.setItem("accessToken", access);
+        localStorage.setItem("refreshToken", refresh);
+        localStorage.setItem("userRole", userRole);
+        localStorage.setItem("userName", userName);
+        localStorage.setItem("isLoggedIn", "true");
+
+        window.dispatchEvent(new Event("authChange"));
+
+        navigate(userRole === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+      } else {
+        alert("Signup successful! Please login.");
+        navigate("/login");
+      }
+    } catch (err) {
+      console.log(err);
+      setError("Something went wrong during signup!");
     }
-
-    alert(res.data.message || "Signup successful! You can now login.");
-    navigate("/login");
   };
 
   return (

@@ -1,11 +1,9 @@
-import axios from "axios";
-
-const API_BASE = "http://localhost:8000/api/auth";
+import API from "./axios";
 
 const handleResponse = async (promise) => {
   try {
     const res = await promise;
-    return res; 
+    return res;
   } catch (err) {
     return {
       data: {
@@ -17,7 +15,9 @@ const handleResponse = async (promise) => {
   }
 };
 
-const signup = (data) => handleResponse(axios.post(`${API_BASE}/signup/`, data));
-const login = (data) => handleResponse(axios.post(`${API_BASE}/login/`, data));
+const signup = (data) => handleResponse(API.post("/auth/signup/", data));
+const login = (data) => handleResponse(API.post("/auth/login/", data));
+const logout = (refreshToken) =>
+  handleResponse(API.post("/auth/logout/", { refresh: refreshToken }));
 
-export default { signup, login };
+export default { signup, login, logout };
