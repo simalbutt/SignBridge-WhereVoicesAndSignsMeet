@@ -8,11 +8,11 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
+  try {
     const res = await auth.login({ email, password, role });
 
     if (!res.data.success) {
@@ -21,13 +21,21 @@ const Login = () => {
     }
 
     const { access, refresh, name, role: userRole } = res.data.data;
+
     localStorage.setItem("accessToken", access);
     localStorage.setItem("refreshToken", refresh);
     localStorage.setItem("userRole", userRole);
     localStorage.setItem("userName", name);
-    alert(res.data.message || "Login successful!");
+    localStorage.setItem("isLoggedIn", "true"); 
+
+  
     navigate(userRole === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
-  };
+      } catch (error) {
+        console.log(error);
+        setError("Something went wrong during login!");
+      }
+};
+
 
   return (
     <div className="min-h-[calc(100vh-70px)] bg-gradient-to-r from-teal-100 to-cyan-100 flex items-center justify-center px-4">
@@ -96,5 +104,6 @@ const Login = () => {
     </div>
   );
 };
+
 
 export default Login;
