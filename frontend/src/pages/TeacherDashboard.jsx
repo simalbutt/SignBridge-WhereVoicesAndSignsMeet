@@ -1,6 +1,9 @@
+
+
 import React, { useState, useEffect } from "react";
 import ClassCard from "../components/ClassCard";
-import { Plus, MoreVertical } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import classroomsApi from "../api/classrooms";
 
 const TeacherDashboard = () => {
@@ -9,12 +12,13 @@ const TeacherDashboard = () => {
   const [newClass, setNewClass] = useState({ title: "", code: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
   const fetchClasses = async () => {
     setLoading(true);
     setError("");
     try {
       const res = await classroomsApi.getClasses();
-      console.log("Fetched classes:", res.data);
       if (res.data.success) {
         setClasses(res.data.data);
       } else {
@@ -40,7 +44,6 @@ const TeacherDashboard = () => {
     setError("");
     try {
       const res = await classroomsApi.createClass(newClass);
-      console.log("Create class response:", res.data);
       if (res.data.success) {
         setClasses([...classes, res.data.data]);
         setNewClass({ title: "", code: "" });
@@ -62,7 +65,6 @@ const TeacherDashboard = () => {
     setError("");
     try {
       const res = await classroomsApi.deleteClass(id);
-      console.log("Delete class response:", res.data);
       if (res.data.success) {
         setClasses(classes.filter((cls) => cls.id !== id));
       } else {
@@ -84,7 +86,17 @@ const TeacherDashboard = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {classes.map((cls) => (
-          <ClassCard key={cls.id} cls={cls} onDelete={handleDeleteClass} />
+          <div key={cls.id} className="relative">
+            <ClassCard cls={cls} onDelete={handleDeleteClass} />
+
+            <button
+              onClick={() => navigate(`/add-student/${cls.id}`)}
+              className="absolute top-2 right-2 w-8 h-8 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center shadow-md transition"
+              title={`Add Student to ${cls.title}`}
+            >
+              <UserPlus className="w-4 h-4" />
+            </button>
+          </div>
         ))}
       </div>
       <button
@@ -93,7 +105,6 @@ const TeacherDashboard = () => {
       >
         <Plus className="w-6 h-6" />
       </button>
-
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
@@ -105,18 +116,14 @@ const TeacherDashboard = () => {
                 placeholder="Class Name"
                 className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
                 value={newClass.title}
-                onChange={(e) =>
-                  setNewClass({ ...newClass, title: e.target.value })
-                }
+                onChange={(e) => setNewClass({ ...newClass, title: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Class Code"
                 className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
                 value={newClass.code}
-                onChange={(e) =>
-                  setNewClass({ ...newClass, code: e.target.value })
-                }
+                onChange={(e) => setNewClass({ ...newClass, code: e.target.value })}
               />
             </div>
 
