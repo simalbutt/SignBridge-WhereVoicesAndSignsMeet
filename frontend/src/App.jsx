@@ -7,6 +7,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import ClassroomPage from "./pages/ClassroomPage";
+import AnnouncementDetail from "./pages/AnnouncementDetail";
+import AddStudent from "./pages/AddStudent"; 
 import TDashboardRoute from "../routes/TDashboardRoute";
 
 function App() {
@@ -19,7 +21,6 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Teacher Dashboard */}
         <Route
           path="/teacher/dashboard"
           element={
@@ -29,12 +30,29 @@ function App() {
           }
         />
 
-        {/* Particular Classroom */}
         <Route
           path="/teacher/class/:id"
           element={
             <TDashboardRoute>
               <ClassroomPage />
+            </TDashboardRoute>
+          }
+        />
+
+        <Route
+          path="/announcement/:id"
+          element={
+            <TDashboardRoute>
+              <AnnouncementDetail />
+            </TDashboardRoute>
+          }
+        />
+
+        <Route
+          path="/add-student/:classId"
+          element={
+            <TDashboardRoute>
+              <AddStudent />
             </TDashboardRoute>
           }
         />

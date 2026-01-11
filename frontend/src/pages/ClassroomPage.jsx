@@ -78,6 +78,7 @@ const ClassroomPage = () => {
           )}
         </div>
       </div>
+
       <button
         onClick={() => {
           setEditingAnn(null); 
@@ -92,7 +93,6 @@ const ClassroomPage = () => {
       >
         <Plus size={28} />
       </button>
-
       {showModal && (
         <AddAnnouncementModal
           onClose={() => setShowModal(false)}
