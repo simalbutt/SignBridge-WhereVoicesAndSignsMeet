@@ -1,9 +1,6 @@
-
-
 import React, { useState, useEffect } from "react";
 import ClassCard from "../components/ClassCard";
-import { Plus, UserPlus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 import classroomsApi from "../api/classrooms";
 
 const TeacherDashboard = () => {
@@ -12,20 +9,18 @@ const TeacherDashboard = () => {
   const [newClass, setNewClass] = useState({ title: "", code: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const fetchClasses = async () => {
     setLoading(true);
-    setError("");
     try {
       const res = await classroomsApi.getClasses();
       if (res.data.success) {
         setClasses(res.data.data);
       } else {
-        setError(res.data.message || "Failed to load classes.");
+        setError(res.data.message || "Failed to load classes");
       }
-    } catch (err) {
-      setError(err.message || "Network error while fetching classes.");
+    } catch {
+      setError("Network error");
     } finally {
       setLoading(false);
     }
@@ -37,110 +32,88 @@ const TeacherDashboard = () => {
 
   const handleAddClass = async () => {
     if (!newClass.title || !newClass.code) {
-      setError("Please fill in all fields.");
+      setError("Please fill all fields");
       return;
     }
     setLoading(true);
-    setError("");
     try {
       const res = await classroomsApi.createClass(newClass);
       if (res.data.success) {
         setClasses([...classes, res.data.data]);
-        setNewClass({ title: "", code: "" });
         setShowModal(false);
-      } else {
-        setError(res.data.message || "Failed to create class.");
+        setNewClass({ title: "", code: "" });
       }
-    } catch (err) {
-      setError(err.message || "Network error while creating class.");
+    } catch {
+      setError("Error creating class");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteClass = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this class?")) return;
-
-    setLoading(true);
-    setError("");
+    if (!window.confirm("Delete this class?")) return;
     try {
       const res = await classroomsApi.deleteClass(id);
       if (res.data.success) {
-        setClasses(classes.filter((cls) => cls.id !== id));
-      } else {
-        setError(res.data.message || "Failed to delete class.");
+        setClasses(classes.filter((c) => c.id !== id));
       }
-    } catch (err) {
-      setError(err.message || "Network error while deleting class.");
-    } finally {
-      setLoading(false);
+    } catch {
+      setError("Failed to delete");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-100 via-cyan-100 to-white relative px-8 py-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Your Classes</h1>
+    <div className="min-h-screen bg-gradient-to-br from-teal-100 via-cyan-100 to-white px-8 py-6">
+      <h1 className="text-2xl font-semibold mb-6">Your Classes</h1>
 
-      {loading && <p className="text-center text-gray-600 mb-4">Loading...</p>}
-      {error && <p className="text-center text-red-600 mb-4">{error}</p>}
+      {loading && <p>Loading...</p>}
+      {error && <p className="text-red-600">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {classes.map((cls) => (
-          <div key={cls.id} className="relative">
-            <ClassCard cls={cls} onDelete={handleDeleteClass} />
-
-            <button
-              onClick={() => navigate(`/add-student/${cls.id}`)}
-              className="absolute top-2 right-2 w-8 h-8 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center shadow-md transition"
-              title={`Add Student to ${cls.title}`}
-            >
-              <UserPlus className="w-4 h-4" />
-            </button>
-          </div>
+          <ClassCard key={cls.id} cls={cls} onDelete={handleDeleteClass} />
         ))}
       </div>
+
       <button
         onClick={() => setShowModal(true)}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center text-3xl transition-all"
+        className="fixed bottom-8 right-8 w-14 h-14 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center"
       >
-        <Plus className="w-6 h-6" />
+        <Plus />
       </button>
+
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Add New Class</h2>
 
-            <div className="flex flex-col gap-3">
-              <input
-                type="text"
-                placeholder="Class Name"
-                className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
-                value={newClass.title}
-                onChange={(e) => setNewClass({ ...newClass, title: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Class Code"
-                className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
-                value={newClass.code}
-                onChange={(e) => setNewClass({ ...newClass, code: e.target.value })}
-              />
-            </div>
+            <input
+              className="w-full border px-3 py-2 rounded mb-3"
+              placeholder="Class Name"
+              value={newClass.title}
+              onChange={(e) =>
+                setNewClass({ ...newClass, title: e.target.value })
+              }
+            />
+            <input
+              className="w-full border px-3 py-2 rounded mb-4"
+              placeholder="Class Code"
+              value={newClass.code}
+              onChange={(e) =>
+                setNewClass({ ...newClass, code: e.target.value })
+              }
+            />
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="flex justify-end gap-2">
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setError("");
-                  setNewClass({ title: "", code: "" });
-                }}
-                className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-gray-300 rounded"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddClass}
-                className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition"
+                className="px-4 py-2 bg-teal-500 text-white rounded"
               >
                 Add
               </button>
