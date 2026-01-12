@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Classroom
+from ..models.classroom import Classroom
 
 class ClassroomSerializer(serializers.ModelSerializer):
     teacher_name = serializers.CharField(source="teacher.name", read_only=True)

@@ -1,8 +1,13 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { validate as isValidUUID } from "uuid"; 
 import auth from "../api/auth";
 
 const Signup = () => {
+  const [searchParams] = useSearchParams();
+  const initialInviteToken = searchParams.get("invite") || "";
+
+  const [inviteToken] = useState(initialInviteToken);
   const [role, setRole] = useState("student");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,16 +26,36 @@ const Signup = () => {
     }
 
     try {
-      const res = await auth.signup({ name, email, password, role });
+      const payload = {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      };
+
+      if (inviteToken && isValidUUID(inviteToken)) {
+        payload.invite_token = inviteToken; 
+      } else {
+        payload.role = role;
+      }
+      const res = await auth.signup(payload);
 
       if (!res.data.success) {
         setError(res.data.message || "Signup failed!");
         return;
       }
+      const loginRes = await auth.login({
+        email: email.trim(),
+        password,
+        role: inviteToken ? "student" : role,
+      });
 
-      const loginRes = await auth.login({ email, password, role });
       if (loginRes.data.success) {
-        const { access, refresh, name: userName, role: userRole } = loginRes.data.data;
+        const {
+          access,
+          refresh,
+          name: userName,
+          role: userRole,
+        } = loginRes.data.data;
 
         localStorage.setItem("accessToken", access);
         localStorage.setItem("refreshToken", refresh);
@@ -40,13 +65,15 @@ const Signup = () => {
 
         window.dispatchEvent(new Event("authChange"));
 
-        navigate(userRole === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+        navigate(
+          userRole === "teacher" ? "/teacher/dashboard" : "/student/dashboard"
+        );
       } else {
         alert("Signup successful! Please login.");
         navigate("/login");
       }
     } catch (err) {
-      console.log(err);
+      console.log("Signup error:", err.response || err);
       setError("Something went wrong during signup!");
     }
   };
@@ -65,7 +92,9 @@ const Signup = () => {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Full Name</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Full Name
+            </label>
             <input
               type="text"
               placeholder="Enter your full name"
@@ -77,7 +106,9 @@ const Signup = () => {
           </div>
 
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Email</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Email
+            </label>
             <input
               type="email"
               placeholder="Enter your email"
@@ -89,7 +120,9 @@ const Signup = () => {
           </div>
 
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Password</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Password
+            </label>
             <input
               type="password"
               placeholder="Enter your password"
@@ -101,7 +134,9 @@ const Signup = () => {
           </div>
 
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Confirm Password</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Confirm Password
+            </label>
             <input
               type="password"
               placeholder="Confirm your password"
@@ -112,29 +147,39 @@ const Signup = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-teal-700 font-medium mb-1">Role</label>
-            <select
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
-            </select>
-          </div>
+          {!inviteToken && (
+            <div>
+              <label className="block text-teal-700 font-medium mb-1">
+                Role
+              </label>
+              <select
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+            </div>
+          )}
 
           <button
             type="submit"
             className="w-full mt-2 py-2 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-600 transition"
           >
-            Sign Up as {role.charAt(0).toUpperCase() + role.slice(1)}
+            Sign Up as{" "}
+            {inviteToken
+              ? "Student"
+              : role.charAt(0).toUpperCase() + role.slice(1)}
           </button>
         </form>
 
         <p className="text-center text-sm text-cyan-700 mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-teal-700 hover:underline">
+          <Link
+            to="/login"
+            className="font-semibold text-teal-700 hover:underline"
+          >
             Login
           </Link>
         </p>
