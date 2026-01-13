@@ -8,32 +8,31 @@ import Signup from "./pages/Signup";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import ClassroomPage from "./pages/ClassroomPage";
 import AnnouncementDetail from "./pages/AnnouncementDetail";
-import AddStudent from "./pages/AddStudent"; 
+import AddStudent from "./pages/AddStudent";
 import TDashboardRoute from "../routes/TDashboardRoute";
 import auth from "./api/auth";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(
+  const [, setIsLoggedIn] = useState(
     localStorage.getItem("isLoggedIn") === "true"
   );
-  useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      auth.setAuthHeader(accessToken);
-    }
 
-    const handleAuthChange = () => {
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) auth.setAuthHeader(token);
+
+    const syncAuth = () => {
       setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
       auth.setAuthHeader(localStorage.getItem("accessToken"));
     };
-    window.addEventListener("authChange", handleAuthChange);
 
-    return () => window.removeEventListener("authChange", handleAuthChange);
+    window.addEventListener("authChange", syncAuth);
+    return () => window.removeEventListener("authChange", syncAuth);
   }, []);
 
   return (
     <Router>
-      <Navbar isLoggedIn={isLoggedIn} />
+      <Navbar />
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
