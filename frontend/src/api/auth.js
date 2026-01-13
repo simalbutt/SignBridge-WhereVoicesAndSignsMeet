@@ -1,33 +1,8 @@
 import API from "./axios";
 
-const handleResponse = async (promise) => {
-  try {
-    const res = await promise;
-    return res;
-  } catch (err) {
-    return {
-      data: {
-        success: false,
-        message: err.response?.data?.message || err.message || "Network error",
-        errors: err.response?.data?.errors || null,
-      },
-    };
-  }
-};
-
-const signup = (data) => handleResponse(API.post("/auth/signup/", data));
-
-const login = (data) => handleResponse(API.post("/auth/login/", data));
-
-const logout = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
-  localStorage.clear();
-  setAuthHeader(null);
-  window.dispatchEvent(new Event("authChange"));
-  if (!refreshToken) return;
-  return handleResponse(API.post("/auth/logout/", { refresh: refreshToken }));
-};
-
+/* ======================
+   AUTH HEADER
+====================== */
 const setAuthHeader = (token) => {
   if (token) {
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -36,20 +11,45 @@ const setAuthHeader = (token) => {
   }
 };
 
-const refreshAccessToken = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
-  if (!refreshToken) return false;
+/* ======================
+   LOGIN
+====================== */
+const login = async (data) => {
+  const res = await API.post("/auth/login/", data);
 
-  try {
-    const res = await API.post("/auth/token/refresh/", { refresh: refreshToken });
-    localStorage.setItem("accessToken", res.data.access);
-    setAuthHeader(res.data.access);
-    return true;
-  } catch (err) {
-    console.error("Refresh token failed:", err);
-    logout();
-    return false;
-  }
+  localStorage.setItem("accessToken", res.data.access);
+  localStorage.setItem("refreshToken", res.data.refresh);
+  localStorage.setItem("isLoggedIn", "true");
+
+  setAuthHeader(res.data.access);
+  window.dispatchEvent(new Event("authChange"));
+
+  return res;
 };
 
-export default { signup, login, logout, setAuthHeader, refreshAccessToken };
+/* ======================
+   LOGOUT (FIXED)
+====================== */
+const logout = async () => {
+  const refreshToken = localStorage.getItem("refreshToken");
+
+  try {
+    if (refreshToken) {
+      // 🔑 access token still exists here
+      await API.post("/auth/logout/", { refresh: refreshToken });
+    }
+  } catch  {
+    console.warn("Logout failed, clearing anyway");
+  }
+
+  // 🧹 clear AFTER API call
+  localStorage.clear();
+  setAuthHeader(null);
+  window.dispatchEvent(new Event("authChange"));
+};
+
+export default {
+  login,
+  logout,
+  setAuthHeader,
+};

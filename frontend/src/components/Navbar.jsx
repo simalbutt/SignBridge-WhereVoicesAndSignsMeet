@@ -20,17 +20,10 @@ const Navbar = () => {
     };
   }, []);
 
+  // 🔥 FIXED LOGOUT (NO UI CHANGE)
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("refreshToken"); 
-    if (refreshToken) {
-      await auth.logout(refreshToken); 
-    }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("isLoggedIn");
-
+    await auth.logout();     // logout API + token cleanup
     setIsLoggedIn(false);
-    window.dispatchEvent(new Event("authChange"));
     navigate("/");
   };
 
