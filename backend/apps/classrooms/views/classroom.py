@@ -5,6 +5,7 @@ from rest_framework import status
 from ..models.classroom import Classroom
 from ..serializers.classroom import ClassroomSerializer
 
+
 class ClassroomListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -36,6 +37,30 @@ class ClassroomListCreateView(APIView):
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
 
         return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClassroomRetrieveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        """Retrieve a single classroom"""
+        try:
+            classroom = Classroom.objects.get(pk=pk)
+        except Classroom.DoesNotExist:
+            return Response(
+                {"success": False, "message": "Classroom not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        user = request.user
+        if user != classroom.teacher and not classroom.students.filter(id=user.id).exists():
+            return Response(
+                {"success": False, "message": "You do not have permission to view this class."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = ClassroomSerializer(classroom)
+        return Response({"success": True, "data": serializer.data})
 
 
 class ClassroomDeleteView(APIView):
