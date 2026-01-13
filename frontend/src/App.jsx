@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
@@ -10,11 +10,30 @@ import ClassroomPage from "./pages/ClassroomPage";
 import AnnouncementDetail from "./pages/AnnouncementDetail";
 import AddStudent from "./pages/AddStudent"; 
 import TDashboardRoute from "../routes/TDashboardRoute";
+import auth from "./api/auth";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    localStorage.getItem("isLoggedIn") === "true"
+  );
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+      auth.setAuthHeader(accessToken);
+    }
+
+    const handleAuthChange = () => {
+      setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+      auth.setAuthHeader(localStorage.getItem("accessToken"));
+    };
+    window.addEventListener("authChange", handleAuthChange);
+
+    return () => window.removeEventListener("authChange", handleAuthChange);
+  }, []);
+
   return (
     <Router>
-      <Navbar />
+      <Navbar isLoggedIn={isLoggedIn} />
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -29,7 +48,6 @@ function App() {
             </TDashboardRoute>
           }
         />
-
         <Route
           path="/teacher/class/:id"
           element={
@@ -38,7 +56,6 @@ function App() {
             </TDashboardRoute>
           }
         />
-
         <Route
           path="/announcement/:id"
           element={
@@ -47,7 +64,6 @@ function App() {
             </TDashboardRoute>
           }
         />
-
         <Route
           path="/add-student/:classId"
           element={

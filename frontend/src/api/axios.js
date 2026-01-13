@@ -13,19 +13,26 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const originalRequest = error.config;
+
+    if (originalRequest.url === "/auth/token/refresh/") {
+      localStorage.clear();
+      window.location.href = "/login";
+      return Promise.reject(error);
+    }
+
     if (error.response && error.response.status === 401) {
       const refreshToken = localStorage.getItem("refreshToken");
+
       if (refreshToken) {
         try {
           const res = await API.post("/auth/token/refresh/", { refresh: refreshToken });
           localStorage.setItem("accessToken", res.data.access);
 
-          
-          error.config.headers.Authorization = `Bearer ${res.data.access}`;
-          return API.request(error.config);
+          originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
+          return API.request(originalRequest);
         } catch (err) {
-           console.error("Refresh token failed:", err);
-         
+          console.error("Refresh token failed:", err);
           localStorage.clear();
           window.location.href = "/login";
         }
@@ -34,6 +41,7 @@ API.interceptors.response.use(
         window.location.href = "/login";
       }
     }
+
     return Promise.reject(error);
   }
 );

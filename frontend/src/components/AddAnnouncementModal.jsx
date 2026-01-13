@@ -1,50 +1,33 @@
 import { X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const AddAnnouncementModal = ({ onClose, onAdd, existingAnnouncement }) => {
-  const [heading, setHeading] = useState("");
-  const [text, setText] = useState("");
-  const [link, setLink] = useState("");
-  const [files, setFiles] = useState([]);
-
-  useEffect(() => {
-    if (existingAnnouncement) {
-      setHeading(existingAnnouncement.heading || "");
-      setText(existingAnnouncement.text || "");
-      setLink(existingAnnouncement.link || "");
-      setFiles(existingAnnouncement.files || []);
-    } else {
-      setHeading("");
-      setText("");
-      setLink("");
-      setFiles([]);
-    }
-  }, [existingAnnouncement]);
+  const [announcementData, setAnnouncementData] = useState(() => ({
+    heading: existingAnnouncement?.heading || "",
+    text: existingAnnouncement?.text || "",
+    link: existingAnnouncement?.link || "",
+    files: [], 
+  }));
 
   const handlePost = () => {
-    if (!heading.trim() && !text.trim()) return; 
+    if (!announcementData.heading.trim() && !announcementData.text.trim()) return;
 
-    const newAnnouncement = {
-      id: existingAnnouncement ? existingAnnouncement.id : Date.now(),
-      heading,
-      text,
-      link,
-      files,
-      date: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-    };
+    const formData = new FormData();
+    formData.append("heading", announcementData.heading);
+    formData.append("text", announcementData.text);
+    if (announcementData.link) formData.append("link", announcementData.link);
+    announcementData.files.forEach((file) => formData.append("files", file));
 
-    onAdd(newAnnouncement);
-    onClose();
+    onAdd(formData);
+  };
+
+  const handleChange = (field, value) => {
+    setAnnouncementData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
-
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
@@ -59,15 +42,15 @@ const AddAnnouncementModal = ({ onClose, onAdd, existingAnnouncement }) => {
         <input
           type="text"
           placeholder="Announcement Heading"
-          value={heading}
-          onChange={(e) => setHeading(e.target.value)}
+          value={announcementData.heading}
+          onChange={(e) => handleChange("heading", e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-teal-300 font-semibold text-gray-800"
         />
 
         <textarea
           placeholder="Write your announcement here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={announcementData.text}
+          onChange={(e) => handleChange("text", e.target.value)}
           className="w-full min-h-[120px] border border-gray-300 rounded-xl p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-teal-300"
         />
 
@@ -76,20 +59,23 @@ const AddAnnouncementModal = ({ onClose, onAdd, existingAnnouncement }) => {
             Choose Files
           </div>
           <span className="text-gray-600 text-sm truncate">
-            {files.length ? files.map(f => f.name).join(", ") : "No files chosen"}
+            {announcementData.files.length
+              ? announcementData.files.map((f) => f.name).join(", ")
+              : "No files chosen"}
           </span>
           <input
             type="file"
             className="hidden"
             multiple
-            onChange={(e) => setFiles([...e.target.files])}
+            onChange={(e) => handleChange("files", [...e.target.files])}
           />
         </label>
+
         <input
           type="text"
           placeholder="Add link (optional)"
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
+          value={announcementData.link}
+          onChange={(e) => handleChange("link", e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-2 mb-6 focus:outline-none focus:ring-2 focus:ring-teal-300"
         />
 

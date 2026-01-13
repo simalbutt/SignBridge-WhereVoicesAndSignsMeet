@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MoreVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,11 +8,8 @@ const AnnouncementCard = ({ ann, onEdit, onDelete }) => {
 
   return (
     <div className="bg-white rounded-xl shadow p-6 relative hover:shadow-lg transition cursor-pointer">
-    
-      <div
-        className="absolute top-3 right-3"
-        onClick={(e) => e.stopPropagation()} 
-      >
+  
+      <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="p-1 hover:bg-gray-100 rounded-full"
@@ -45,19 +41,16 @@ const AnnouncementCard = ({ ann, onEdit, onDelete }) => {
         )}
       </div>
 
-      {ann.heading && (
-        <h2
-          className="text-teal-700 font-bold text-2xl mb-3"
-          onClick={() =>
-            navigate(`/announcement/${ann.id}`, { state: { announcement: ann } })
-          }
-        >
-          {ann.heading}
-        </h2>
-      )}
+      <h2
+        className="text-teal-700 font-bold text-2xl mb-3"
+        onClick={() =>
+          navigate(`/announcement/${ann.id}`, { state: { announcementId: ann.id } })
+        }
+      >
+        {ann.heading}
+      </h2>
 
-    
-      {ann.text && <p className="text-gray-800 mb-4">{ann.text}</p>}
+      <p className="text-gray-800 mb-4">{ann.text}</p>
 
       {ann.link && (
         <a
@@ -72,21 +65,19 @@ const AnnouncementCard = ({ ann, onEdit, onDelete }) => {
 
       {ann.files && ann.files.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-4">
-          {ann.files.map((f, index) => (
+          {ann.files.map((f) => (
             <a
-              key={index}
-              href={URL.createObjectURL(f)} 
+              key={f.id}
+              href={f.file}
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 bg-gray-100 px-3 py-1 rounded hover:bg-gray-200 text-sm"
             >
-              {f.name}
+              {f.file.split("/").pop()}
             </a>
           ))}
         </div>
       )}
-
-      {ann.date && <p className="text-sm text-gray-500">{ann.date}</p>}
     </div>
   );
 };

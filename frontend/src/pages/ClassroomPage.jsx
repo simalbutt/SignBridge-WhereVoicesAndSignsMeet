@@ -1,35 +1,86 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import AnnouncementCard from "../components/AnnouncementCard";
 import AddAnnouncementModal from "../components/AddAnnouncementModal";
+import API from "../api/axios"; 
+import {
+  getClassroomAnnouncements,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+} from "../api/announcementApi";
 
 const ClassroomPage = () => {
   const { id } = useParams();
-  const [classData, setClassData] = useState(null);
+  const classroomId = id;
+
+  const [classData, setClassData] = useState({ title: "Loading...", code: "" });
   const [announcements, setAnnouncements] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingAnn, setEditingAnn] = useState(null); 
+  const [editingAnn, setEditingAnn] = useState(null);
+
 
   useEffect(() => {
-    setClassData({
-      title: "Operations Research",
-      code: "BCS-7E",
-    });
-  }, []);
+    if (!classroomId) return;
 
-  const handleAddOrUpdate = (ann) => {
-    if (editingAnn) {
-     
-      setAnnouncements((prev) =>
-        prev.map((a) => (a.id === ann.id ? ann : a))
-      );
-      setEditingAnn(null);
-    } else {
-    
-      setAnnouncements((prev) => [...prev, ann]);
+    let isMounted = true;
+
+    const fetchClassroom = async () => {
+      try {
+        const res = await API.get(`/classrooms/classes/${classroomId}/`);
+        if (isMounted && res.data.success) {
+          setClassData(res.data.data); 
+        }
+      } catch (err) {
+        console.error("Failed to fetch classroom:", err);
+      }
+    };
+
+    fetchClassroom();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [classroomId]);
+
+  useEffect(() => {
+    if (!classroomId) return;
+
+    let isMounted = true;
+
+    const fetchAnnouncements = async () => {
+      try {
+        const data = await getClassroomAnnouncements(classroomId);
+        if (isMounted) setAnnouncements(data);
+      } catch (err) {
+        console.error("Failed to fetch announcements:", err);
+      }
+    };
+
+    fetchAnnouncements();
+    return () => {
+      isMounted = false;
+    };
+  }, [classroomId]);
+
+  const handleAddOrUpdate = async (formData) => {
+    try {
+      let ann;
+      if (editingAnn) {
+        ann = await updateAnnouncement(editingAnn.id, formData);
+        setAnnouncements((prev) =>
+          prev.map((a) => (a.id === ann.id ? ann : a))
+        );
+        setEditingAnn(null);
+      } else {
+        ann = await createAnnouncement(classroomId, formData);
+        setAnnouncements((prev) => [ann, ...prev]);
+      }
+      setShowModal(false);
+    } catch (err) {
+      console.error("Failed to add/update announcement:", err);
     }
-    setShowModal(false);
   };
 
   const handleEdit = (ann) => {
@@ -37,25 +88,27 @@ const ClassroomPage = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+  const handleDelete = async (annId) => {
+    try {
+      await deleteAnnouncement(annId);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== annId));
+    } catch (err) {
+      console.error("Failed to delete announcement:", err);
+    }
   };
 
   return (
     <div className="min-h-screen bg-teal-50 pb-24">
-
       <div className="max-w-5xl mx-auto px-6">
-
-        <div className="bg-gradient-to-r from-teal-100 to-cyan-100
-                        text-teal-800 px-10 py-10 mt-6
-                        rounded-3xl shadow-sm min-h-[160px]
-                        flex flex-col justify-center">
-          <h1 className="text-3xl md:text-4xl font-semibold">
-            {classData?.title}
-          </h1>
-          <p className="mt-2 text-base opacity-80">
-            {classData?.code}
-          </p>
+   
+        <div
+          className="bg-gradient-to-r from-teal-100 to-cyan-100
+                     text-teal-800 px-10 py-10 mt-6
+                     rounded-3xl shadow-sm min-h-[160px]
+                     flex flex-col justify-center"
+        >
+          <h1 className="text-3xl md:text-4xl font-semibold">{classData.title}</h1>
+          <p className="mt-2 text-base opacity-80">{classData.code}</p>
         </div>
 
         <div className="mt-10 space-y-4">
@@ -81,7 +134,7 @@ const ClassroomPage = () => {
 
       <button
         onClick={() => {
-          setEditingAnn(null); 
+          setEditingAnn(null);
           setShowModal(true);
         }}
         className="fixed bottom-10 right-10
@@ -93,11 +146,13 @@ const ClassroomPage = () => {
       >
         <Plus size={28} />
       </button>
+
       {showModal && (
         <AddAnnouncementModal
           onClose={() => setShowModal(false)}
           onAdd={handleAddOrUpdate}
-          existingAnnouncement={editingAnn} 
+          existingAnnouncement={editingAnn}
+          classroomId={classroomId}
         />
       )}
     </div>
