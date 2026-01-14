@@ -13,7 +13,8 @@ import TDashboardRoute from "../routes/TDashboardRoute";
 import auth from "./api/auth";
 import StudentDashboard from "./pages/StudentDashboard";
 import DashboardRoute from "../routes/DashboardRoute";
-
+import StudentClassroomPage from "./pages/StudentClassroomPage";
+import StudentAnnouncementDetail from "./pages/StudentAnnouncementDetail";
 function App() {
   const [, setIsLoggedIn] = useState(
     localStorage.getItem("isLoggedIn") === "true"
@@ -81,6 +82,24 @@ function App() {
             </DashboardRoute>
           }
         />
+
+         <Route
+          path="/student/class/:id"
+          element={
+            <DashboardRoute>
+              <StudentClassroomPage />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="/student/announcement/:id"
+          element={
+            <DashboardRoute>
+              <StudentAnnouncementDetail/>
+            </DashboardRoute>
+          }
+        />
+
       </Routes>
       
     </Router>
