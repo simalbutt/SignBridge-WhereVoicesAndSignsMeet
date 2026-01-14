@@ -1,8 +1,4 @@
 import API from "./axios";
-
-/* ======================
-   AUTH HEADER
-====================== */
 const setAuthHeader = (token) => {
   if (token) {
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -10,10 +6,10 @@ const setAuthHeader = (token) => {
     delete API.defaults.headers.common["Authorization"];
   }
 };
+const signup = async (data) => {
+  return await API.post("/auth/signup/", data);
+};
 
-/* ======================
-   LOGIN
-====================== */
 const login = async (data) => {
   const res = await API.post("/auth/login/", data);
 
@@ -27,28 +23,24 @@ const login = async (data) => {
   return res;
 };
 
-/* ======================
-   LOGOUT (FIXED)
-====================== */
 const logout = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
 
   try {
     if (refreshToken) {
-      // 🔑 access token still exists here
       await API.post("/auth/logout/", { refresh: refreshToken });
     }
-  } catch  {
+  } catch {
     console.warn("Logout failed, clearing anyway");
   }
 
-  // 🧹 clear AFTER API call
   localStorage.clear();
   setAuthHeader(null);
   window.dispatchEvent(new Event("authChange"));
 };
 
 export default {
+  signup,   
   login,
   logout,
   setAuthHeader,
