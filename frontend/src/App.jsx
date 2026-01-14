@@ -11,6 +11,8 @@ import AnnouncementDetail from "./pages/AnnouncementDetail";
 import AddStudent from "./pages/AddStudent";
 import TDashboardRoute from "../routes/TDashboardRoute";
 import auth from "./api/auth";
+import StudentDashboard from "./pages/StudentDashboard";
+import DashboardRoute from "../routes/DashboardRoute";
 
 function App() {
   const [, setIsLoggedIn] = useState(
@@ -71,7 +73,16 @@ function App() {
             </TDashboardRoute>
           }
         />
+         <Route
+          path="/student/dashboard"
+          element={
+            <DashboardRoute>
+              <StudentDashboard />
+            </DashboardRoute>
+          }
+        />
       </Routes>
+      
     </Router>
   );
 }
