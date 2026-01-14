@@ -8,6 +8,7 @@ const TDashboardRoute = ({ children }) => {
   if (!isLoggedIn || userRole !== "teacher") {
     return <Navigate to="/login" replace />;
   }
+  
 
   return children;
 };
