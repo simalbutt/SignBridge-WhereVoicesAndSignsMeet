@@ -19,7 +19,7 @@ const StudentAnnouncementDetail = () => {
   const [editText, setEditText] = useState("");
   const [loadingComments, setLoadingComments] = useState(true);
 
-  const fileInputRef = useRef(null); 
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!announcement?.id) return;
@@ -100,13 +100,32 @@ const StudentAnnouncementDetail = () => {
   return (
     <div className="min-h-screen p-6 bg-teal-50">
       <div className="max-w-4xl mx-auto p-6 bg-teal-100 rounded shadow mt-6 relative">
+        {/* Announcement Header */}
         <div className="bg-teal-50 p-6 rounded shadow-md mb-6 relative">
           <h1 className="text-3xl font-bold text-green-800 mb-4">
             {announcement.heading}
           </h1>
           <p className="text-gray-800 mb-4">{announcement.text}</p>
+
+          {/* Display Files */}
+          {announcement.files?.length > 0 && (
+            <div className="flex flex-wrap gap-3 mb-4">
+              {announcement.files.map((f) => (
+                <a
+                  key={f.id}
+                  href={f.file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-700 bg-gray-100 px-3 py-1 rounded hover:bg-gray-200 text-sm"
+                >
+                  {f.file.split("/").pop()}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* Comments Section */}
         <div className="mt-6">
           <h2 className="text-2xl font-semibold mb-4 text-gray-800">
             Comments
@@ -140,6 +159,7 @@ const StudentAnnouncementDetail = () => {
                   <p className="text-sm font-semibold text-gray-700">
                     {c.author_name}
                   </p>
+
                   {editingId === c.id ? (
                     <div className="flex gap-2 mt-1">
                       <input
@@ -159,6 +179,7 @@ const StudentAnnouncementDetail = () => {
                     <p className="text-gray-800 text-sm mt-1">{c.text}</p>
                   )}
 
+                  {/* Video Comment */}
                   {c.video_url && (
                     <video
                       src={c.video_url}
@@ -168,6 +189,7 @@ const StudentAnnouncementDetail = () => {
                     />
                   )}
 
+                  {/* Teacher Reply */}
                   {c.reply && (
                     <div className="bg-teal-50 p-2 rounded mt-2 ml-6">
                       <p className="text-teal-700 font-semibold text-sm">
@@ -181,6 +203,7 @@ const StudentAnnouncementDetail = () => {
             )}
           </div>
 
+          {/* Add New Comment */}
           <div className="flex flex-col gap-2 border rounded px-2 py-2 bg-white">
             <div className="flex items-center gap-2">
               <input
@@ -190,6 +213,8 @@ const StudentAnnouncementDetail = () => {
                 placeholder="Add a comment..."
                 className="flex-1 text-sm outline-none px-2 py-1"
               />
+
+              {/* Hidden File Input */}
               <input
                 type="file"
                 accept="video/*"
