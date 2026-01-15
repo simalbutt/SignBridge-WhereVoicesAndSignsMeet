@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from ..models.classroom import Classroom
+from ..models.classroom import Classroom, Enrollment
 from ..serializers.classroom import ClassroomSerializer
 
 
@@ -24,7 +24,6 @@ class ClassroomListCreateView(APIView):
         serializer = ClassroomSerializer(classrooms, many=True)
 
         return Response({"success": True, "data": serializer.data})
-
 
     def post(self, request):
         """Create a new classroom"""
@@ -64,7 +63,12 @@ class ClassroomRetrieveDeleteView(APIView):
             )
 
         user = request.user
-        if user != classroom.teacher and not classroom.students.filter(id=user.id).exists():
+
+        if user == classroom.teacher:
+            pass
+        elif Enrollment.objects.filter(classroom=classroom, student=user).exists():
+            pass
+        else:
             return Response(
                 {"success": False, "message": "You do not have permission to view this class."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -72,7 +76,6 @@ class ClassroomRetrieveDeleteView(APIView):
 
         serializer = ClassroomSerializer(classroom)
         return Response({"success": True, "data": serializer.data})
-
 
     def delete(self, request, pk):
         """Delete a classroom"""
