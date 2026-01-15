@@ -2,6 +2,12 @@ import React, { useEffect, useState } from "react";
 import StudentClassCard from "../components/StudentClassCard";
 import { Plus, Trash2 } from "lucide-react";
 
+import {
+  getStudentClasses,
+  enrollInClass,
+  unenrollFromClass,
+} from "../api/studentClassApi";
+
 const StudentDashboard = () => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,35 +16,49 @@ const StudentDashboard = () => {
   const [newClass, setNewClass] = useState({ title: "", code: "" });
 
   useEffect(() => {
-    setTimeout(() => {
-      setClasses([
-        { id: 1, title: "Web Engineering", code: "WE-301", teacher_name: "Sir Ali" },
-        { id: 2, title: "Database Systems", code: "DB-202", teacher_name: "Miss Sara" },
-      ]);
-      setLoading(false);
-    }, 500);
+    const fetchClasses = async () => {
+      try {
+        const res = await getStudentClasses();
+        setClasses(res.data.data);
+      } catch (error) {
+        console.error("Failed to load classes", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClasses();
   }, []);
 
-  const handleAddClass = () => {
+  const handleAddClass = async () => {
     if (!newClass.title || !newClass.code) return;
 
-    setClasses([
-      ...classes,
-      {
-        id: Date.now(),
-        title: newClass.title,
-        code: newClass.code,
-        teacher_name: "Unknown",
-      },
-    ]);
+    try {
+      await enrollInClass(newClass);
+      const res = await getStudentClasses();
+      setClasses(res.data.data);
 
-    setNewClass({ title: "", code: "" });
-    setShowModal(false);
+      setNewClass({ title: "", code: "" });
+      setShowModal(false);
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+          "Failed to enroll in class"
+      );
+    }
   };
+  const handleUnenroll = async (id) => {
+    if (!window.confirm("Are you sure you want to unenroll from this class?"))
+      return;
 
-  const handleUnenroll = (id) => {
-    if (window.confirm("Are you sure you want to unenroll from this class?")) {
-      setClasses(classes.filter((cls) => cls.id !== id));
+    try {
+      await unenrollFromClass(id);
+      setClasses((prev) => prev.filter((cls) => cls.id !== id));
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+          "Failed to unenroll"
+      );
     }
   };
 
@@ -66,10 +86,10 @@ const StudentDashboard = () => {
       </div>
 
       <button
-            onClick={() => setShowModal(true)}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center"
-          >
-            <Plus />
+        onClick={() => setShowModal(true)}
+        className="fixed bottom-8 right-8 w-14 h-14 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center"
+      >
+        <Plus />
       </button>
 
       {showModal && (
