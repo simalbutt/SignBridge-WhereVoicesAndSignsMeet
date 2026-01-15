@@ -3,6 +3,12 @@ from .views.classroom import (
     ClassroomListCreateView,
     ClassroomRetrieveDeleteView,
 )
+from .views.studentdashboard import (
+    StudentClassListView,
+    EnrollInClassView,
+    UnenrollClassView,
+)
+
 from .views.student import ClassroomStudentsView, AddStudentView, RemoveStudentView
 
 urlpatterns = [
@@ -12,4 +18,8 @@ urlpatterns = [
     path("<int:classroom_id>/students/", ClassroomStudentsView.as_view()),
     path("<int:classroom_id>/students/add/", AddStudentView.as_view()),
     path("<int:classroom_id>/students/<int:student_id>/remove/", RemoveStudentView.as_view()),
+
+    path("student/classes/", StudentClassListView.as_view()),
+    path("student/enroll/", EnrollInClassView.as_view()),
+    path("student/unenroll/<int:classroom_id>/", UnenrollClassView.as_view()),
 ]
