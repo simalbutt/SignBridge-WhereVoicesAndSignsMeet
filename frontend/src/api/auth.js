@@ -1,4 +1,5 @@
 import API from "./axios";
+
 const setAuthHeader = (token) => {
   if (token) {
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -6,6 +7,7 @@ const setAuthHeader = (token) => {
     delete API.defaults.headers.common["Authorization"];
   }
 };
+
 const signup = async (data) => {
   return await API.post("/auth/signup/", data);
 };
@@ -18,6 +20,7 @@ const login = async (data) => {
   localStorage.setItem("isLoggedIn", "true");
 
   setAuthHeader(res.data.access);
+
   window.dispatchEvent(new Event("authChange"));
 
   return res;
@@ -40,7 +43,7 @@ const logout = async () => {
 };
 
 export default {
-  signup,   
+  signup,
   login,
   logout,
   setAuthHeader,

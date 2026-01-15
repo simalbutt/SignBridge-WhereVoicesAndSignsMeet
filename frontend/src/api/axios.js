@@ -4,9 +4,6 @@ const API = axios.create({
   baseURL: "http://localhost:8000/api",
 });
 
-/* ======================
-   REQUEST INTERCEPTOR
-====================== */
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
@@ -15,27 +12,15 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-/* ======================
-   RESPONSE INTERCEPTOR
-====================== */
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    /* 🚫 Ignore logout endpoint */
     if (originalRequest?.url?.includes("/auth/logout/")) {
       return Promise.reject(error);
     }
 
-    /* 🚫 If refresh itself failed → force logout */
-    if (originalRequest?.url?.includes("/auth/token/refresh/")) {
-      localStorage.clear();
-      window.location.href = "/login";
-      return Promise.reject(error);
-    }
-
-    /* 🔁 Handle access token expiry */
     if (
       error.response?.status === 401 &&
       !originalRequest._retry
@@ -51,15 +36,16 @@ API.interceptors.response.use(
       }
 
       try {
-        const res = await API.post("/auth/token/refresh/", {
+        const res = await axios.post("/api/auth/token/refresh/", {
           refresh: refreshToken,
         });
-
         localStorage.setItem("accessToken", res.data.access);
-
+        API.defaults.headers.common["Authorization"] = `Bearer ${res.data.access}`;
         originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
+
         return API.request(originalRequest);
       } catch (err) {
+        console.error("Refresh token failed", err);
         localStorage.clear();
         window.location.href = "/login";
         return Promise.reject(err);

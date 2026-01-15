@@ -16,7 +16,7 @@ class Comment(models.Model):
 
     text = models.TextField(blank=True)
     video = models.FileField(
-        upload_to="comments/videos/",
+        upload_to="comments-videos/",
         blank=True,
         null=True
     )
