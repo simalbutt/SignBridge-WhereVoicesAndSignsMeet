@@ -1,8 +1,5 @@
 import API from "./axios";
 
-/* ================================
-   Helper: Set Auth Header
-================================ */
 const setAuthHeader = (token) => {
   if (token) {
     API.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -11,47 +8,59 @@ const setAuthHeader = (token) => {
   }
 };
 
-/* ================================
-   Signup
-================================ */
 const signup = async (data) => {
-  return await API.post("/auth/signup/", data);
+  try {
+    const res = await API.post("/auth/signup/", data);
+    if (!res.data.success) throw new Error(res.data.message || "Signup failed");
+    return res.data;
+  } catch (err) {
+    console.error("Signup failed:", err);
+    throw err;
+  }
 };
 
-/* ================================
-   Login
-================================ */
-const login = async (data) => {
-  const res = await API.post("/auth/login/", data);
+const login = async ({ email, password, role }) => {
+  const res = await API.post("/auth/login/", { email, password, role });
 
-  localStorage.setItem("accessToken", res.data.access);
-  localStorage.setItem("refreshToken", res.data.refresh);
+  if (!res.data.success) throw new Error(res.data.message || "Login failed");
+
+  const { access, refresh, role: userRole, name } = res.data.data;
+
+  localStorage.setItem("accessToken", access);
+  localStorage.setItem("refreshToken", refresh);
+  localStorage.setItem("userRole", userRole);
+  localStorage.setItem("userName", name);
   localStorage.setItem("isLoggedIn", "true");
 
-  setAuthHeader(res.data.access);
+  setAuthHeader(access);
   window.dispatchEvent(new Event("authChange"));
 
-  return res;
+  return res.data.data;
 };
 
-/* ================================
-   Logout
-================================ */
 const logout = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
-
   try {
+    const refreshToken = localStorage.getItem("refreshToken");
+
     if (refreshToken) {
       await API.post("/auth/logout/", { refresh: refreshToken });
     }
-  } catch  {
-    console.warn("Logout request failed, clearing anyway");
-  }
 
-  localStorage.clear();
-  setAuthHeader(null);
-  window.dispatchEvent(new Event("authChange"));
-  window.location.href = "/login";
+    localStorage.clear();
+    setAuthHeader(null);
+    window.dispatchEvent(new Event("authChange"));
+    window.location.href = "/login";
+  } catch (err) {
+    console.error("Logout failed:", err);
+    localStorage.clear();
+    setAuthHeader(null);
+    window.dispatchEvent(new Event("authChange"));
+    window.location.href = "/login";
+  }
+};
+const deleteAccount = async () => {
+  const res = await API.delete("/auth/delete-account/"); 
+  return res.data;
 };
 
 export default {
@@ -59,4 +68,5 @@ export default {
   login,
   logout,
   setAuthHeader,
+  deleteAccount
 };
