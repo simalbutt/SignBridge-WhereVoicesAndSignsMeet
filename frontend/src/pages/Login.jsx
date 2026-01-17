@@ -14,26 +14,20 @@ const Login = () => {
     setError("");
 
     try {
-      const res = await auth.login({ email, password, role });
+      const user = await auth.login({ email, password, role });
 
-      if (!res.data.success) {
-        setError(res.data.message || "Login failed!");
-        return;
-      }
-
-      const { access, refresh, name, role: userRole } = res.data.data;
-      localStorage.setItem("accessToken", access);
-      localStorage.setItem("refreshToken", refresh);
-      localStorage.setItem("userRole", userRole);
-      localStorage.setItem("userName", name);
-      localStorage.setItem("isLoggedIn", "true");
-
-      window.dispatchEvent(new Event("authChange"));
-
-      navigate(userRole === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
-    } catch (error) {
-      console.log(error);
-      setError("Something went wrong during login!");
+      navigate(
+        user.role === "teacher"
+          ? "/teacher/dashboard"
+          : "/student/dashboard"
+      );
+    } catch (err) {
+      console.error(err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Invalid email, password, or role"
+      );
     }
   };
 
@@ -43,19 +37,19 @@ const Login = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-teal-800 text-center mb-2">
           Welcome Back
         </h1>
-        <p className="text-center text-cyan-700 mb-6">
-          Login to continue to SignBridge
-        </p>
 
-        {error && <p className="text-red-600 text-center mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-600 text-center mb-4">{error}</p>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Email</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Email
+            </label>
             <input
               type="email"
-              placeholder="Enter your email"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="w-full px-4 py-2 border rounded-lg"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -63,11 +57,12 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Password</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Password
+            </label>
             <input
               type="password"
-              placeholder="Enter your password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="w-full px-4 py-2 border rounded-lg"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -75,9 +70,11 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-teal-700 font-medium mb-1">Role</label>
+            <label className="block text-teal-700 font-medium mb-1">
+              Role
+            </label>
             <select
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="w-full px-4 py-2 border rounded-lg"
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
@@ -88,15 +85,15 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full mt-2 py-2 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-600 transition"
+            className="w-full py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-600"
           >
-            Login as {role.charAt(0).toUpperCase() + role.slice(1)}
+            Login as {role}
           </button>
         </form>
 
-        <p className="text-center text-sm text-cyan-700 mt-6">
+        <p className="text-center text-sm mt-6">
           Don’t have an account?{" "}
-          <Link to="/signup" className="font-semibold text-teal-700 hover:underline">
+          <Link to="/signup" className="text-teal-700 font-semibold">
             Sign Up
           </Link>
         </p>

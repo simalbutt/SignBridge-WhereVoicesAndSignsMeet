@@ -19,12 +19,14 @@ const Navbar = () => {
       window.removeEventListener("authChange", handleAuthChange);
     };
   }, []);
-
-  // 🔥 FIXED LOGOUT (NO UI CHANGE)
   const handleLogout = async () => {
-    await auth.logout();     // logout API + token cleanup
-    setIsLoggedIn(false);
-    navigate("/");
+    try {
+      await auth.logout(); 
+      setIsLoggedIn(false); 
+      navigate("/login");  
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
 
   return (

@@ -7,8 +7,20 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ["id", "text", "video", "video_url", "reply", "author_name", "created_at"]
-        read_only_fields = ["id", "author_name", "created_at", "reply"]
+        fields = [
+            "id",
+            "text",
+            "video",
+            "video_url",
+            "reply",
+            "author_name",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "author_name",
+            "created_at",
+        ]  
 
     def get_video_url(self, obj):
         if obj.video:
