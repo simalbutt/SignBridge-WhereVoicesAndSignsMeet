@@ -15,6 +15,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import DashboardRoute from "../routes/DashboardRoute";
 import StudentClassroomPage from "./pages/StudentClassroomPage";
 import StudentAnnouncementDetail from "./pages/StudentAnnouncementDetail";
+import StudentVideoPage from "./pages/StudentVideoPage";
 function App() {
   const [, setIsLoggedIn] = useState(
     localStorage.getItem("isLoggedIn") === "true"
@@ -99,6 +100,11 @@ function App() {
             </DashboardRoute>
           }
         />
+        <Route path="/student/video" element={
+           <DashboardRoute>
+            <StudentVideoPage />
+          </DashboardRoute>
+        } />
 
       </Routes>
       
