@@ -25,37 +25,37 @@ const StudentVideoPage = () => {
     document.body.appendChild(element);
     element.click();
   };
-  
 
   return (
-    <div className="flex flex-col items-center p-6 gap-6 max-w-3xl mx-auto">
-      <div className="w-full bg-gray-100 rounded-lg shadow-lg p-2">
+    <div className="flex flex-col items-center p-6 gap-6 max-w-4xl mx-auto">
+      
+      <div className="w-full  bg-gray-100 rounded-lg shadow-lg p-3">
         <video
           src={videoUrl}
           controls
-          className="w-full rounded-lg"
+          className="w-full max-h-64 rounded-lg object-contain"
         />
         <h2 className="mt-2 text-lg font-semibold text-center">Video</h2>
-       
       </div>
 
       <div className="flex gap-4">
         <button
-          className="bg-teal-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-teal-600 hover:shadow-lg transition duration-300 ease-in-out"
+          className="bg-teal-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-teal-600 hover:shadow-lg transition"
           onClick={handleGenerate}
         >
           Generate Transcription
         </button>
+
         <button
-          className="bg-gray-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 hover:shadow-lg transition duration-300 ease-in-out"
+          className="bg-gray-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 hover:shadow-lg transition disabled:opacity-50"
           onClick={handleDownload}
-          disabled={!transcription} 
+          disabled={!transcription}
         >
           Download Transcription
         </button>
       </div>
 
-      <div className="w-full bg-gray-50 rounded-lg shadow-lg p-4 min-h-[100px]">
+      <div className="w-full max-w-3xl bg-gray-50 rounded-lg shadow-lg p-4 min-h-[120px]">
         <h2 className="text-lg font-semibold mb-2">Transcription</h2>
         {transcription ? (
           <p className="text-gray-700 whitespace-pre-line">{transcription}</p>
