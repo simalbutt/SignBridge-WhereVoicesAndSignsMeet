@@ -1,58 +1,66 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { generateTranscript } from "../api/transcriptionApi";
 
 const StudentVideoPage = () => {
   const location = useLocation();
   const videoUrl = location.state?.videoUrl;
 
   const [transcription, setTranscription] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!videoUrl) {
     return <p className="p-4 text-red-500">No video selected!</p>;
   }
 
-  const handleGenerate = () => {
-    setTranscription(
-      "This is a sample transcription generated for the video."
-    );
+  const handleGenerate = async () => {
+    setLoading(true);
+    try {
+      const res = await generateTranscript(videoUrl);
+      setTranscription(res.data.transcription);
+      setDownloadUrl(res.data.download_url);
+    } catch (err) {
+      alert("Failed to generate transcription");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDownload = () => {
-    const element = document.createElement("a");
-    const file = new Blob([transcription], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = "transcription.txt";
-    document.body.appendChild(element);
-    element.click();
+    if (downloadUrl) {
+      window.open(`http://localhost:8000${downloadUrl}`, "_blank");
+    }
   };
 
   return (
     <div className="flex flex-col items-center p-6 gap-6 max-w-4xl mx-auto">
-      
-      <div className="w-full  bg-gray-100 rounded-lg shadow-lg p-3">
+      <div className="w-full bg-gray-100 rounded-lg shadow-lg p-3">
         <video
           src={videoUrl}
           controls
           className="w-full max-h-64 rounded-lg object-contain"
         />
-        <h2 className="mt-2 text-lg font-semibold text-center">Video</h2>
       </div>
 
       <div className="flex gap-4">
         <button
-          className="bg-teal-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-teal-600 hover:shadow-lg transition"
           onClick={handleGenerate}
+          disabled={loading}
+          className="bg-teal-500 text-white px-4 py-2 rounded-lg shadow hover:bg-teal-600 disabled:opacity-50"
         >
-          Generate Transcription
+          {loading ? "Generating..." : "Generate Transcription"}
         </button>
 
-        <button
-          className="bg-gray-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 hover:shadow-lg transition disabled:opacity-50"
-          onClick={handleDownload}
-          disabled={!transcription}
-        >
-          Download Transcription
-        </button>
+        {downloadUrl && (
+          <button
+            onClick={handleDownload}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-700"
+          >
+            Download Transcript
+          </button>
+        )}
       </div>
 
       <div className="w-full max-w-3xl bg-gray-50 rounded-lg shadow-lg p-4 min-h-[120px]">
