@@ -9,20 +9,15 @@ const setAuthHeader = (token) => {
 };
 
 const signup = async (data) => {
-  try {
-    const res = await API.post("/auth/signup/", data);
-    if (!res.data.success) throw new Error(res.data.message || "Signup failed");
-    return res.data;
-  } catch (err) {
-    console.error("Signup failed:", err);
-    throw err;
-  }
+  const res = await API.post("/auth/signup/", data);
+  if (!res.data.success) throw new Error(res.data.message);
+  return res.data;
 };
 
 const login = async ({ email, password, role }) => {
   const res = await API.post("/auth/login/", { email, password, role });
 
-  if (!res.data.success) throw new Error(res.data.message || "Login failed");
+  if (!res.data.success) throw new Error(res.data.message);
 
   const { access, refresh, role: userRole, name } = res.data.data;
 
@@ -41,25 +36,19 @@ const login = async ({ email, password, role }) => {
 const logout = async () => {
   try {
     const refreshToken = localStorage.getItem("refreshToken");
-
     if (refreshToken) {
       await API.post("/auth/logout/", { refresh: refreshToken });
     }
-
-    localStorage.clear();
-    setAuthHeader(null);
-    window.dispatchEvent(new Event("authChange"));
-    window.location.href = "/login";
-  } catch (err) {
-    console.error("Logout failed:", err);
+  } finally {
     localStorage.clear();
     setAuthHeader(null);
     window.dispatchEvent(new Event("authChange"));
     window.location.href = "/login";
   }
 };
+
 const deleteAccount = async () => {
-  const res = await API.delete("/auth/delete-account/"); 
+  const res = await API.delete("/auth/delete-account/");
   return res.data;
 };
 
@@ -68,5 +57,5 @@ export default {
   login,
   logout,
   setAuthHeader,
-  deleteAccount
+  deleteAccount,
 };
