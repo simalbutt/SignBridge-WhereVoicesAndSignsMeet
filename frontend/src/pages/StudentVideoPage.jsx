@@ -25,7 +25,6 @@ const StudentVideoPage = () => {
     document.body.appendChild(element);
     element.click();
   };
-  
 
   return (
     <div className="flex flex-col items-center p-6 gap-6 max-w-3xl mx-auto">
@@ -54,7 +53,6 @@ const StudentVideoPage = () => {
           Download Transcription
         </button>
       </div>
-
       <div className="w-full bg-gray-50 rounded-lg shadow-lg p-4 min-h-[100px]">
         <h2 className="text-lg font-semibold mb-2">Transcription</h2>
         {transcription ? (
