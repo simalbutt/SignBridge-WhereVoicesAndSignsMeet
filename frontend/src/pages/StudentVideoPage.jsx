@@ -62,7 +62,7 @@ const StudentVideoPage = () => {
   };
 
   const goToAvatarPage = () => {
-    navigate("/sign-avatar", { state: { videoUrl } });
+    navigate("/student/avatar", { state: { videoUrl } });
   };
 
   return (
