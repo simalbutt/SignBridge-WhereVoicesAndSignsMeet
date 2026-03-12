@@ -1,6 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from apps.announcements.models import Comment, Announcement
+from apps.announcements.models import Announcement
+from apps.classrooms.models import Comment
 from apps.announcements.serializers.comment import CommentSerializer
 from apps.announcements.permissions import IsEnrolledOrTeacher, IsAuthorOrTeacher
 

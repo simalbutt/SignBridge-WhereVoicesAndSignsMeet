@@ -45,27 +45,33 @@ const AnnouncementDetail = () => {
 
   /* ---------------- ADD / EDIT REPLY ---------------- */
   const handleReply = async (commentId) => {
-    const text =
-      editingReplyId === commentId
-        ? editingText
-        : replyText[commentId];
+    // Get the text from the correct state
+    const text = editingReplyId === commentId ? editingText : replyText[commentId];
 
     if (!text?.trim()) return;
 
     try {
-      const updatedComment = await postCommentReply(commentId, {
-        reply: text,
+      // 1. Call the new transcription endpoint
+      const res = await API.post(`/transcription/comments/${commentId}/reply/`, {
+        reply: text, // This matches request.data.get('reply') in your view
       });
 
+      // 2. The backend returns the full updated comment object
+      const updatedComment = res.data;
+
+      // 3. Update the UI state
       setComments((prev) =>
         prev.map((c) => (c.id === commentId ? updatedComment : c))
       );
 
+      // 4. Reset UI states
       setReplyText((prev) => ({ ...prev, [commentId]: "" }));
       setEditingReplyId(null);
       setEditingText("");
+      
     } catch (err) {
-      console.error(err);
+      console.error("Reply Error:", err);
+      alert("Could not save reply. Make sure the backend server is running.");
     }
   };
 
@@ -74,9 +80,12 @@ const AnnouncementDetail = () => {
     if (!window.confirm("Delete this reply?")) return;
 
     try {
-      const updatedComment = await postCommentReply(commentId, {
+      // ✅ Use the new transcription path
+      const res = await API.post(`/transcription/comments/${commentId}/reply/`, {
         reply: null,
       });
+
+      const updatedComment = res.data;
 
       setComments((prev) =>
         prev.map((c) => (c.id === commentId ? updatedComment : c))
@@ -132,7 +141,25 @@ const AnnouncementDetail = () => {
                 <ArrowRight className="w-4 h-4 text-teal-500" />
               </div>
 
-              <p className="text-sm mt-1">{comment.text}</p>
+              {/* Display the regular comment text */}
+              <p className="text-sm mt-1 text-gray-600 italic">"{comment.text}"</p>
+
+              {/* NEW: Display the AI extracted signs for the Teacher
+              {comment.ai_text && (
+                <div className="mt-3 bg-amber-50 border-l-4 border-amber-500 p-4 rounded shadow-inner">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      AI SIGN RESULT
+                    </span>
+                  </div>
+                  <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
+                    {comment.ai_text}
+                  </p>
+                  <p className="text-[10px] text-amber-700 mt-2">
+                    * This text was automatically extracted from the student's sign language video.
+                  </p>
+                </div>
+              )} */}
 
               {/* TEACHER REPLY */}
               {comment.reply && (
