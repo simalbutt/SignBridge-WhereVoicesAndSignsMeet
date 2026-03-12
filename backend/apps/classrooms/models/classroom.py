@@ -1,5 +1,6 @@
 from django.db import models
 from apps.accounts.models import User
+from django.conf import settings
 
 class Classroom(models.Model):
     title = models.CharField(max_length=255)
