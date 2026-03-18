@@ -6,19 +6,16 @@ import string
 
 class SignToTextService:
     def __init__(self):
-        # 1. Path Setup for your trained model
         current_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(current_dir, '..', 'character_model.p')
         
         with open(model_path, 'rb') as f:
             self.model_dict = pickle.load(f)
         self.model = self.model_dict['model']
-        
-        # 2. MediaPipe Setup for Video Stream
+     
         from mediapipe.python.solutions import hands as mp_hands
         self.hands = mp_hands.Hands(static_image_mode=False, min_detection_confidence=0.3)
-        
-        # 3. Label Mapping and Logic Constants
+       
         self.letters = list(string.ascii_uppercase)
         self.labels_dict = {i: letter for i, letter in enumerate(self.letters)}
         self.EXPECTED_LENGTH = 42
@@ -29,37 +26,31 @@ class SignToTextService:
         Processes a single JPG frame from the webcam.
         Returns a single character or None.
         """
-        # Read the temporary image saved by the view
+
         frame = cv2.imread(image_path)
         if frame is None:
             return None
 
-        # Convert to RGB for MediaPipe
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.hands.process(frame_rgb)
 
         if results.multi_hand_landmarks:
             hand_landmarks = results.multi_hand_landmarks[0]
-            
-            # Extract landmark coordinates
+     
             x_ = [lm.x for lm in hand_landmarks.landmark]
             y_ = [lm.y for lm in hand_landmarks.landmark]
 
             data_aux = []
             for lm in hand_landmarks.landmark:
-                # Relative landmark positioning (same as your training)
                 data_aux.append(lm.x - min(x_))
                 data_aux.append(lm.y - min(y_))
 
-            # Ensure data length matches the model's EXPECTED_LENGTH (42)
             data_aux = data_aux[:self.EXPECTED_LENGTH]
             while len(data_aux) < self.EXPECTED_LENGTH:
                 data_aux.append(0)
 
-            # ML Inference
             prediction = self.model.predict([np.asarray(data_aux)])[0]
 
-            # Map prediction to letter
             if isinstance(prediction, (int, np.integer)):
                 predicted_character = self.labels_dict.get(int(prediction), str(prediction))
             else:
@@ -67,7 +58,7 @@ class SignToTextService:
 
             return predicted_character
         
-        return None # Return None if no hand is found
+        return None
 
     def process_video_file(self, video_path):
         cap = cv2.VideoCapture(video_path)
@@ -97,26 +88,21 @@ class SignToTextService:
                     data_aux.append(lm.x - min(x_))
                     data_aux.append(lm.y - min(y_))
 
-                # Normalize to 42 features
                 data_aux = data_aux[:self.EXPECTED_LENGTH]
                 while len(data_aux) < self.EXPECTED_LENGTH:
                     data_aux.append(0)
 
-                # ML Inference
                 pred = self.model.predict([np.asarray(data_aux)])[0]
-                
-                # Numeric to String mapping
+           
                 if isinstance(pred, (int, np.integer)):
                     predicted_character = self.labels_dict.get(int(pred), str(pred))
                 else:
                     predicted_character = str(pred)
 
-            # Update Buffer for Stability
             buffer.append(predicted_character)
             if len(buffer) > self.BUFFER_SIZE:
                 buffer.pop(0)
 
-            # Sequence building logic from your script
             if buffer.count(buffer[-1]) > self.BUFFER_SIZE // 2:
                 stable_label = buffer[-1]
                 if stable_label != last_appended:

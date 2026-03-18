@@ -1,13 +1,18 @@
-import API from "./axios"; 
+import API from "./axios";
 
 export const getClassroomAnnouncements = async (classroomId) => {
   const response = await API.get(`/classrooms/${classroomId}/announcements/`);
   return response.data;
 };
 
+export const getAnnouncementDetail = async (announcementId) => {
+  const response = await API.get(`/announcements/${announcementId}/`);
+  return response.data;
+};
+
 export const createAnnouncement = async (classroomId, formData) => {
   const response = await API.post(
-    `/classrooms/${classroomId}/announcements/`,
+    `/api/classrooms/${classroomId}/announcements/`,
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
   );
@@ -16,7 +21,7 @@ export const createAnnouncement = async (classroomId, formData) => {
 
 export const updateAnnouncement = async (announcementId, formData) => {
   const response = await API.patch(
-    `/announcements/${announcementId}/`,
+    `/api/announcements/${announcementId}/`,
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
   );

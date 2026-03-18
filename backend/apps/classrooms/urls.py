@@ -8,6 +8,7 @@ from .views.studentdashboard import (
     EnrollInClassView,
     UnenrollClassView,
 )
+from apps.classrooms.views.comment import *
 
 from .views.student import ClassroomStudentsView, AddStudentView, RemoveStudentView
 
@@ -22,4 +23,12 @@ urlpatterns = [
     path("student/classes/", StudentClassListView.as_view()),
     path("student/enroll/", EnrollInClassView.as_view()),
     path("student/unenroll/<int:classroom_id>/", UnenrollClassView.as_view()),
+
+    path('comments/<int:announcement_id>/', CommentListView.as_view()),
+    path('comments/create/<int:announcement_id>/', CommentCreateView.as_view()),
+    path('comments/update/<int:comment_id>/', CommentUpdateView.as_view()),
+    path('comments/delete/<int:comment_id>/', CommentDeleteView.as_view()),
+    path('comments/reply/<int:comment_id>/', CommentReplyView.as_view()),
+    path('comments/reply/update/<int:comment_id>/', CommentReplyUpdateView.as_view()),
+    path('comments/reply/delete/<int:comment_id>/', CommentReplyDeleteView.as_view()),
 ]
