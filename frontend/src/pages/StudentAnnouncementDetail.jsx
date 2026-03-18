@@ -6,275 +6,301 @@ import Webcam from "react-webcam";
 import API from "../api/axios";
 import {
   getAnnouncementComments,
-  postCommentReply,
+  createComment,
+  updateComment,
   deleteComment,
 } from "../api/commentApi";
-
-// Input mode constants
-const MODE_TEXT   = "text";
+const MODE_TEXT = "text";
 const MODE_CAMERA = "camera";
-const MODE_VIDEO  = "video";
+const MODE_VIDEO = "video";
 
 const StudentAnnouncementDetail = () => {
-  const location  = useLocation();
-  const navigate  = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { announcement } = location.state || {};
 
-  const [comments,        setComments]        = useState([]);
-  const [newComment,      setNewComment]       = useState("");
-  const [newFile,         setNewFile]          = useState(null);
-  const [editingId,       setEditingId]        = useState(null);
-  const [editText,        setEditText]         = useState("");
-  const [loadingComments, setLoadingComments]  = useState(true);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [newFile, setNewFile] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [loadingComments, setLoadingComments] = useState(true);
 
-  // --- input mode ---
   const [inputMode, setInputMode] = useState(MODE_TEXT);
-
-  // --- AI processing ---
-  const [isProcessingAI,  setIsProcessingAI]  = useState(false);
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [processProgress, setProcessProgress] = useState(0);
   const [aiResultGenerated, setAiResultGenerated] = useState(false);
 
-  const webcamRef   = useRef(null);
+  const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
-
-  /* ------------------------------------------------------------------ */
-  /*  Helpers                                                             */
-  /* ------------------------------------------------------------------ */
+  const cameraIntervalRef = useRef(null);
   const isVideoFile = (file) => {
     if (!file) return false;
     const name = typeof file === "string" ? file : file.name;
-    return ["mp4", "webm", "ogg", "mov", "avi", "mkv"].includes(
-      name.split(".").pop().toLowerCase()
-    );
+    const extension = name.split(".").pop().toLowerCase();
+    return ["mp4", "webm", "ogg", "mov", "avi", "mkv"].includes(extension);
   };
 
-  const announcementVideo = announcement?.files?.find((f) =>
-    isVideoFile(f.file)
-  );
+  const announcementVideo = announcement?.files?.find((f) => isVideoFile(f.file));
 
   const getStoredUser = () => {
-    try { return JSON.parse(localStorage.getItem("user")) || {}; }
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem("user")) || {};
+    } catch {
+      return {};
+    }
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Fetch comments                                                      */
-  /* ------------------------------------------------------------------ */
   useEffect(() => {
     if (!announcement?.id) return;
+
     const fetchComments = async () => {
       setLoadingComments(true);
       try {
-        const res = await getAnnouncementComments(announcement.id);
-        setComments(res?.data ?? res);
+        const response = await getAnnouncementComments(announcement.id);
+        const commentsData = response.data || response;
+        setComments(Array.isArray(commentsData) ? commentsData : []);
       } catch (err) {
         console.error("Failed to fetch comments", err);
+        setComments([]);
       } finally {
         setLoadingComments(false);
       }
     };
+
     fetchComments();
   }, [announcement]);
-
-  /* ------------------------------------------------------------------ */
-  /*  Live-camera inference loop                                          */
-  /* ------------------------------------------------------------------ */
   useEffect(() => {
+    return () => {
+      if (cameraIntervalRef.current) {
+        clearInterval(cameraIntervalRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (cameraIntervalRef.current) {
+      clearInterval(cameraIntervalRef.current);
+      cameraIntervalRef.current = null;
+    }
+
     if (inputMode !== MODE_CAMERA) return;
 
     const captureAndPredict = async () => {
       if (!webcamRef.current) return;
-      const imageSrc = webcamRef.current.getScreenshot();
-      if (!imageSrc) return;
+
       try {
-        const blob      = await fetch(imageSrc).then((r) => r.blob());
-        const formData  = new FormData();
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (!imageSrc) return;
+        const blob = await fetch(imageSrc).then(r => r.blob());
+
+        const formData = new FormData();
         formData.append("image", blob, "frame.jpg");
-        const res = await API.post("/transcription/predict-camera/", formData);
+
+        const res = await API.post("/transcription/predict-camera/", formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
         if (res.data.prediction) {
-          setNewComment((prev) => prev + res.data.prediction);
+          const prediction = res.data.prediction;
+          if (prediction === 'BACKSPACE') {
+            setNewComment(prev => prev.slice(0, -1));
+          } else if (prediction === ' ') {
+            setNewComment(prev => prev + ' ');
+          } else if (prediction && prediction !== 'nothing') {
+            setNewComment(prev => prev + prediction);
+          }
         }
       } catch (err) {
         console.error("Inference failed", err);
       }
     };
+    cameraIntervalRef.current = setInterval(captureAndPredict, 1500);
 
-    const interval = setInterval(captureAndPredict, 1500);
-    return () => clearInterval(interval);
+    return () => {
+      if (cameraIntervalRef.current) {
+        clearInterval(cameraIntervalRef.current);
+        cameraIntervalRef.current = null;
+      }
+    };
   }, [inputMode]);
 
-  /* ------------------------------------------------------------------ */
-  /*  Mode switch helper                                                  */
-  /* ------------------------------------------------------------------ */
   const switchMode = (mode) => {
     setInputMode(mode);
     setNewFile(null);
     setAiResultGenerated(false);
-    // keep comment text so user doesn't lose typing
+    setNewComment(""); 
   };
+  const processVideoWithAI = async () => {
+    if (!newFile || !isVideoFile(newFile)) return false;
 
-  /* ------------------------------------------------------------------ */
-  /*  Add / post comment                                                  */
-  /* ------------------------------------------------------------------ */
-  const handleAddComment = async () => {
-    // Step 1 – process video with AI first (upload mode)
-    if (
-      inputMode === MODE_VIDEO &&
-      newFile &&
-      isVideoFile(newFile) &&
-      !aiResultGenerated
-    ) {
-      setIsProcessingAI(true);
-      setProcessProgress(10);
-      try {
-        const aiFormData = new FormData();
-        aiFormData.append("video", newFile);
-        const aiRes = await API.post(
-          "/transcription/predict-character/",
-          aiFormData,
-          {
-            onUploadProgress: (p) =>
-              setProcessProgress(Math.round((p.loaded * 100) / p.total)),
+    setIsProcessingAI(true);
+    setProcessProgress(10);
+
+    try {
+      const aiFormData = new FormData();
+      aiFormData.append("video", newFile);
+
+      const aiRes = await API.post("/transcription/predict-character/", aiFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setProcessProgress(Math.min(percent, 90)); 
           }
-        );
+        },
+      });
+
+      if (aiRes.data.prediction) {
         setNewComment(aiRes.data.prediction);
         setAiResultGenerated(true);
         setProcessProgress(100);
-      } catch {
-        alert("AI processing failed. You can still type your comment manually.");
-        setAiResultGenerated(true);
-      } finally {
-        setIsProcessingAI(false);
+        return true;
+      } else {
+        throw new Error("No prediction received");
       }
-      return; // user confirms text then clicks again to post
+    } catch (error) {
+      console.error("AI processing failed:", error);
+      alert("AI processing failed. You can still type your comment manually.");
+      setAiResultGenerated(true); 
+      setProcessProgress(0);
+      return false;
+    } finally {
+      setIsProcessingAI(false);
     }
+  };
 
-    // Step 2 – post
-    if (!newComment.trim() && !newFile) return;
+  const handleAddComment = async () => {
+    if (inputMode === MODE_VIDEO && newFile && isVideoFile(newFile) && !aiResultGenerated) {
+      await processVideoWithAI();
+      return;
+    }
+    if (!newComment.trim() && !newFile) {
+      alert("Please enter a comment or attach a file.");
+      return;
+    }
 
     try {
       const formData = new FormData();
       formData.append("text", newComment);
+
       if (newFile) {
         formData.append("video", newFile);
-        formData.append("ai_text", newComment);
+        formData.append("ai_text", newComment); 
       }
 
-      const res = await API.post(
-        `/transcription/announcements/${announcement.id}/comments/`,
-        formData
-      );
+      const response = await createComment(announcement.id, formData);
+      const newCommentData = response.data || response;
 
-      // Fix instant name display — read from localStorage right now
       const storedUser = getStoredUser();
-      const displayName =
-        res.data.author_name ||
+      const displayName = newCommentData.author_name ||
         storedUser.username ||
         storedUser.first_name ||
         "You";
-
-      setComments((prev) => [
-        ...prev,
-        { ...res.data, author_name: displayName },
-      ]);
+      setComments((prev) => [...prev, {
+        ...newCommentData,
+        author_name: displayName
+      }]);
       setNewComment("");
       setNewFile(null);
       setAiResultGenerated(false);
+      setInputMode(MODE_TEXT); 
     } catch (err) {
-      console.error("Post error:", err.response?.data);
-      alert("Could not post comment.");
+      console.error("Post error:", err.response?.data || err);
+      alert("Could not post comment. Please try again.");
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Delete comment — calls DELETE /transcription/comments/<id>/        */
-  /* ------------------------------------------------------------------ */
   const handleDelete = async (commentId) => {
-    // 1. Confirm before action
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
 
     try {
-      // 2. Use the exact URL from your urls.py: /transcription/comments/<id>/delete/
-      await API.delete(`/transcription/comments/${commentId}/delete/`);
-
-      // 3. Update the UI state immediately
+      await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c.id !== commentId));
-
     } catch (err) {
-      console.error("Delete error details:", err.response?.data);
-      
-      // Handle specific backend errors
-      if (err.response?.status === 403) {
-        alert("Permission Denied: You can only delete your own comments.");
-      } else if (err.response?.status === 404) {
-        alert("Error: Comment not found on server.");
-      } else {
-        alert("Could not delete comment. Please try again.");
-      }
+      console.error("Delete error:", err);
+      alert("Could not delete comment.");
     }
   };
+  const handleEdit = (id, text) => {
+    setEditingId(id);
+    setEditText(text);
+  };
 
-  /* ------------------------------------------------------------------ */
-  /*  Edit comment                                                        */
-  /* ------------------------------------------------------------------ */
-  const handleEdit     = (id, text) => { setEditingId(id); setEditText(text); };
   const handleSaveEdit = async (id) => {
+    if (!editText.trim()) return;
+
     try {
-      const res = await postCommentReply(id, { text: editText });
+      const response = await updateComment(id, { text: editText });
+      const updatedComment = response.data || response;
+
       setComments((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...(res.data ?? res) } : c))
+        prev.map((c) => (c.id === id ? { ...c, ...updatedComment } : c))
       );
       setEditingId(null);
+      setEditText("");
     } catch (err) {
-      console.error(err);
+      console.error("Edit error:", err);
+      alert("Could not update comment.");
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  File change                                                         */
-  /* ------------------------------------------------------------------ */
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
+  };
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
-      setNewFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setNewFile(file);
       setAiResultGenerated(false);
+      setNewComment(""); 
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Misc                                                                */
-  /* ------------------------------------------------------------------ */
-  const handleClick = (fileUrl) =>
+  const handleClick = (fileUrl) => {
     navigate("/student/video", { state: { videoUrl: fileUrl } });
+  };
 
-  if (!announcement)
-    return <p className="text-center mt-10">No announcement found!</p>;
+  if (!announcement) {
+    return (
+      <div className="min-h-screen p-6 bg-teal-50">
+        <div className="max-w-4xl mx-auto p-6 bg-teal-100 rounded shadow mt-6 text-center">
+          <p className="text-gray-700">No announcement found!</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+  let actionLabel = "Comment";
+  let actionColor = "bg-orange-500 hover:bg-orange-600";
 
-  /* ------------------------------------------------------------------ */
-  /*  Button label / colour for the action button                         */
-  /* ------------------------------------------------------------------ */
-  const actionLabel = isProcessingAI
-    ? "Wait..."
-    : inputMode === MODE_VIDEO && !aiResultGenerated && newFile
-    ? "Process Video"
-    : "Comment";
+  if (isProcessingAI) {
+    actionLabel = "Processing...";
+    actionColor = "bg-gray-300 cursor-not-allowed";
+  } else if (inputMode === MODE_VIDEO && !aiResultGenerated && newFile) {
+    actionLabel = "Process Video";
+    actionColor = "bg-blue-600 hover:bg-blue-700";
+  }
 
-  const actionColor = isProcessingAI
-    ? "bg-gray-300 cursor-not-allowed"
-    : inputMode === MODE_VIDEO && !aiResultGenerated && newFile
-    ? "bg-blue-600 hover:bg-blue-700"
-    : "bg-orange-500 hover:bg-orange-600";
+  const isActionDisabled = isProcessingAI ||
+    (inputMode === MODE_VIDEO && !aiResultGenerated && !newFile) ||
+    (inputMode === MODE_TEXT && !newComment.trim() && !newFile);
 
-  /* ================================================================== */
   return (
     <div className="min-h-screen p-6 bg-teal-50">
       <div className="max-w-4xl mx-auto p-6 bg-teal-100 rounded shadow mt-6">
-
-        {/* ── Announcement card ── */}
         <div className="bg-teal-50 p-6 rounded shadow-md mb-6 relative">
-          <h1 className="text-3xl font-bold text-green-800 mb-4">
-            {announcement.heading}
-          </h1>
+          <h1 className="text-3xl font-bold text-green-800 mb-4">{announcement.heading}</h1>
           <p className="text-gray-800 mb-4">{announcement.text}</p>
 
           {announcement.files?.length > 0 && (
@@ -295,9 +321,7 @@ const StudentAnnouncementDetail = () => {
                       className="flex items-center gap-2 bg-white border border-teal-300 px-3 py-1.5 rounded-lg text-teal-700 hover:bg-teal-100 transition text-sm shadow-sm"
                     >
                       <Paperclip className="w-4 h-4" />
-                      <span className="truncate max-w-[200px]">
-                        {fileUrl.split("/").pop()}
-                      </span>
+                      <span className="truncate max-w-[200px]">{fileUrl.split("/").pop()}</span>
                     </a>
                   );
                 })}
@@ -307,9 +331,7 @@ const StudentAnnouncementDetail = () => {
 
           {announcementVideo && (
             <button
-              onClick={() =>
-                handleClick(announcementVideo.file_url || announcementVideo.file)
-              }
+              onClick={() => handleClick(announcementVideo.file_url || announcementVideo.file)}
               className="absolute top-6 right-6 bg-teal-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-teal-600 transition text-sm"
             >
               Watch Video Lesson
@@ -317,19 +339,15 @@ const StudentAnnouncementDetail = () => {
           )}
         </div>
 
-        {/* ── Comments heading ── */}
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">Comments</h2>
 
-        {/* ── AI progress bar ── */}
         {isProcessingAI && (
-          <div className="mb-4 p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm animate-pulse">
+          <div className="mb-4 p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-bold text-blue-700 uppercase tracking-widest">
                 SignBridge AI: Processing…
               </span>
-              <span className="text-xs font-bold text-blue-600">
-                {processProgress}%
-              </span>
+              <span className="text-xs font-bold text-blue-600">{processProgress}%</span>
             </div>
             <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
               <div
@@ -340,7 +358,6 @@ const StudentAnnouncementDetail = () => {
           </div>
         )}
 
-        {/* ── Comments feed ── */}
         <div className="space-y-4 max-h-80 overflow-y-auto mb-4 p-2">
           {loadingComments ? (
             <p className="text-gray-500 italic">Loading comments…</p>
@@ -348,11 +365,7 @@ const StudentAnnouncementDetail = () => {
             <p className="text-gray-400 italic text-sm">No comments yet. Be the first!</p>
           ) : (
             comments.map((c) => (
-              <div
-                key={c.id}
-                className="bg-white p-4 rounded-lg shadow-sm border border-teal-200 relative mb-3"
-              >
-                {/* Edit / Delete buttons */}
+              <div key={c.id} className="bg-white p-4 rounded-lg shadow-sm border border-teal-200 relative mb-3">
                 <div className="absolute top-3 right-3 flex gap-2">
                   <button
                     onClick={() => handleEdit(c.id, c.text)}
@@ -370,9 +383,7 @@ const StudentAnnouncementDetail = () => {
                   </button>
                 </div>
 
-                <p className="text-xs font-bold text-teal-600 mb-1">
-                  {c.author_name}
-                </p>
+                <p className="text-xs font-bold text-teal-600 mb-1">{c.author_name}</p>
 
                 {editingId === c.id ? (
                   <div className="flex gap-2">
@@ -381,16 +392,17 @@ const StudentAnnouncementDetail = () => {
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       className="flex-1 border rounded px-2 py-1 text-sm"
+                      autoFocus
                     />
                     <button
                       onClick={() => handleSaveEdit(c.id)}
-                      className="bg-green-100 p-1 rounded"
+                      className="bg-green-100 p-1 rounded hover:bg-green-200"
                     >
                       <Check className="w-4 h-4 text-green-600" />
                     </button>
                     <button
-                      onClick={() => setEditingId(null)}
-                      className="bg-red-100 p-1 rounded"
+                      onClick={handleCancelEdit}
+                      className="bg-red-100 p-1 rounded hover:bg-red-200"
                     >
                       <X className="w-4 h-4 text-red-500" />
                     </button>
@@ -399,18 +411,20 @@ const StudentAnnouncementDetail = () => {
                   <p className="text-gray-800 text-sm pr-16">{c.text}</p>
                 )}
 
-                {c.video_url && (
+                {c.video && (
                   <div className="mt-2 bg-black rounded-lg overflow-hidden max-w-[250px]">
-                    <video src={c.video_url} controls className="w-full h-auto" />
+                    <video
+                      src={c.video}
+                      controls
+                      className="w-full h-auto"
+                    />
                   </div>
                 )}
 
                 {c.reply && (
                   <div className="bg-teal-50 border-l-4 border-teal-400 p-3 rounded mt-2 ml-4">
-                    <p className="text-teal-800 font-bold text-[10px] uppercase">
-                      Teacher Reply
-                    </p>
-                    <p className="text-gray-700 text-sm italic">"{c.reply}"</p>
+                    <p className="text-teal-800 font-bold text-[10px] uppercase">Teacher Reply</p>
+                    <p className="text-gray-700 text-sm italic">{c.reply}</p>
                   </div>
                 )}
               </div>
@@ -418,24 +432,23 @@ const StudentAnnouncementDetail = () => {
           )}
         </div>
 
-        {/* ── Integrated input area ── */}
         <div className="flex flex-col gap-2 border-2 border-teal-200 rounded-xl px-3 py-3 bg-white shadow-inner">
 
-          {/* Mode tabs */}
           <div className="flex gap-1 mb-2 border-b border-gray-100 pb-2">
             {[
-              { mode: MODE_TEXT,   label: "Text",        Icon: MessageSquare },
-              { mode: MODE_CAMERA, label: "Live Camera", Icon: Camera        },
-              { mode: MODE_VIDEO,  label: "Upload Video", Icon: Upload       },
+              { mode: MODE_TEXT, label: "Text", Icon: MessageSquare },
+              { mode: MODE_CAMERA, label: "Live Camera", Icon: Camera },
+              { mode: MODE_VIDEO, label: "Upload Video", Icon: Upload }
             ].map(({ mode, label, Icon }) => (
               <button
                 key={mode}
                 onClick={() => switchMode(mode)}
+                disabled={isProcessingAI}
                 className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg transition-all ${
                   inputMode === mode
                     ? "bg-teal-600 text-white shadow"
                     : "text-gray-400 hover:text-teal-500"
-                }`}
+                } ${isProcessingAI ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {label}
@@ -443,7 +456,6 @@ const StudentAnnouncementDetail = () => {
             ))}
           </div>
 
-          {/* Live camera preview */}
           {inputMode === MODE_CAMERA && (
             <div className="flex flex-col items-center gap-3 mb-3">
               <Webcam
@@ -451,6 +463,11 @@ const StudentAnnouncementDetail = () => {
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
                 className="w-full max-w-md rounded-lg border-2 border-teal-500"
+                videoConstraints={{
+                  width: 640,
+                  height: 480,
+                  facingMode: "user"
+                }}
               />
               <p className="text-xs text-gray-400 italic">
                 Signs are being read in real-time and appended below.
@@ -458,7 +475,6 @@ const StudentAnnouncementDetail = () => {
             </div>
           )}
 
-          {/* Upload video – file picker + preview */}
           {inputMode === MODE_VIDEO && (
             <div className="flex flex-col gap-2 mb-2">
               <input
@@ -471,47 +487,47 @@ const StudentAnnouncementDetail = () => {
               <button
                 type="button"
                 onClick={() => !isProcessingAI && fileInputRef.current.click()}
-                className="flex items-center gap-2 self-start border-2 border-dashed border-teal-300 px-4 py-2 rounded-lg text-sm text-teal-600 hover:bg-teal-50 transition"
+                disabled={isProcessingAI}
+                className="flex items-center gap-2 self-start border-2 border-dashed border-teal-300 px-4 py-2 rounded-lg text-sm text-teal-600 hover:bg-teal-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Upload className="w-4 h-4" />
                 {newFile ? newFile.name : "Choose a video file"}
               </button>
-              {/* {newFile && aiResultGenerated && (
-                <p className="text-xs text-green-600 font-semibold">
-                  ✓ AI extracted text — review below and click Comment.
+              {newFile && !aiResultGenerated && (
+                <p className="text-xs text-blue-600">
+                  Click "Process Video" to generate text from your video
                 </p>
-              )} */}
+              )}
             </div>
           )}
 
-          {/* Text input row */}
           <div className="flex items-center gap-3">
             <input
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !isProcessingAI && handleAddComment()}
+              onKeyDown={(e) => e.key === "Enter" && !isActionDisabled && handleAddComment()}
               placeholder={
                 inputMode === MODE_TEXT
                   ? "Write your comment…"
                   : inputMode === MODE_CAMERA
-                  ? "Signs appear here in real-time…"
-                  : aiResultGenerated
-                  ? "Review AI text, then click Comment…"
-                  : "Select a video, then click Process Video…"
+                    ? "Signs appear here in real-time…"
+                    : aiResultGenerated
+                      ? "Review AI text, then click Comment…"
+                      : "Select a video, then click Process Video…"
               }
-              disabled={isProcessingAI}
-              className="flex-1 text-sm outline-none bg-transparent font-medium placeholder-gray-300"
+              disabled={isProcessingAI || (inputMode === MODE_VIDEO && !aiResultGenerated)}
+              className="flex-1 text-sm outline-none bg-transparent font-medium placeholder-gray-300 disabled:opacity-50"
             />
-
             <button
               onClick={handleAddComment}
-              disabled={isProcessingAI}
-              className={`px-5 py-2 rounded-lg text-sm font-bold text-white transition-all ${actionColor}`}
+              disabled={isActionDisabled}
+              className={`px-5 py-2 rounded-lg text-sm font-bold text-white transition-all ${actionColor} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {actionLabel}
             </button>
           </div>
+
         </div>
 
       </div>

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.announcements.models import Announcement, AnnouncementFile
 # Ensure this is importing the version we just fixed!
-from .comment import CommentSerializer 
+from ...classrooms.serializers.comment import CommentSerializer 
 
 class AnnouncementFileSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField() 
@@ -19,8 +19,6 @@ class AnnouncementFileSerializer(serializers.ModelSerializer):
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     files = AnnouncementFileSerializer(many=True, read_only=True)
-    # This 'comments' field will now include 'ai_text' 
-    # because of the changes we made to CommentSerializer
     comments = CommentSerializer(many=True, read_only=True)
     author_name = serializers.CharField(source="author.name", read_only=True)
 
@@ -33,5 +31,5 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "author_name",
             "created_at",
             "files",
-            "comments", # This now sends the AI string to the frontend
+            "comments", 
         ]

@@ -49,21 +49,11 @@ class IsEnrolledOrTeacher(BasePermission):
 
 
 class IsAuthor(BasePermission):
-    """
-    Permission for object author only.
-    """
-
     def has_object_permission(self, request, view, obj):
-        return obj.author == request.user
-
+        return obj.user == request.user
 
 class IsAuthorOrTeacher(BasePermission):
-    """
-    Permission for object author or teacher.
-    Teachers always allowed.
-    """
-
     def has_object_permission(self, request, view, obj):
-        if obj.author == request.user:
+        if obj.user == request.user:
             return True
         return request.user.is_authenticated and request.user.role == "teacher"
