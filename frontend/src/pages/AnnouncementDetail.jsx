@@ -123,6 +123,8 @@ const AnnouncementDetail = () => {
     }));
   };
 
+  const commentsArray = Array.isArray(comments) ? comments : [];
+
   return (
     <div className="min-h-screen p-6 bg-teal-50">
       <div className="max-w-4xl mx-auto p-6 bg-teal-100 rounded shadow mt-6">
@@ -151,13 +153,13 @@ const AnnouncementDetail = () => {
         </div>
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">Comments</h2>
 
-        {comments.length === 0 ? (
+        {commentsArray.length === 0 ? (
           <p className="text-gray-500 italic text-center py-4">
             No comments yet.
           </p>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => (
+            {commentsArray.map((comment) => (
               <div
                 key={comment.id}
                 className="bg-white p-4 rounded-lg shadow-sm border border-teal-200"

@@ -12,7 +12,7 @@ export const getAnnouncementDetail = async (announcementId) => {
 
 export const createAnnouncement = async (classroomId, formData) => {
   const response = await API.post(
-    `/api/classrooms/${classroomId}/announcements/`,
+    `/classrooms/${classroomId}/announcements/`,
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
   );
@@ -21,7 +21,7 @@ export const createAnnouncement = async (classroomId, formData) => {
 
 export const updateAnnouncement = async (announcementId, formData) => {
   const response = await API.patch(
-    `/api/announcements/${announcementId}/`,
+    `/announcements/${announcementId}/`,
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
   );

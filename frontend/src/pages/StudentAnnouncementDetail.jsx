@@ -30,10 +30,16 @@ const StudentAnnouncementDetail = () => {
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [processProgress, setProcessProgress] = useState(0);
   const [aiResultGenerated, setAiResultGenerated] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [lastPredictionTime, setLastPredictionTime] = useState(0);
 
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraIntervalRef = useRef(null);
+  const lastPredictionRef = useRef("");
+  const predictionQueueRef = useRef([]);
+  const isProcessingRef = useRef(false);
+  
   const isVideoFile = (file) => {
     if (!file) return false;
     const name = typeof file === "string" ? file : file.name;
@@ -70,6 +76,7 @@ const StudentAnnouncementDetail = () => {
 
     fetchComments();
   }, [announcement]);
+
   useEffect(() => {
     return () => {
       if (cameraIntervalRef.current) {
@@ -78,24 +85,58 @@ const StudentAnnouncementDetail = () => {
     };
   }, []);
 
+  const processPredictionQueue = async () => {
+    if (isProcessingRef.current || predictionQueueRef.current.length === 0) return;
+    
+    isProcessingRef.current = true;
+    
+    while (predictionQueueRef.current.length > 0) {
+      const prediction = predictionQueueRef.current.shift();
+      
+      setNewComment(prev => {
+        if (prediction === 'BACKSPACE') {
+          return prev.slice(0, -1);
+        } else if (prediction === 'SPACE') {
+          return prev + ' ';
+        } else if (prediction && prediction !== 'nothing') {
+          return prev + prediction;
+        }
+        return prev;
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
+    isProcessingRef.current = false;
+  };
+
   useEffect(() => {
     if (cameraIntervalRef.current) {
       clearInterval(cameraIntervalRef.current);
       cameraIntervalRef.current = null;
+      setIsCapturing(false);
+      predictionQueueRef.current = [];
     }
 
     if (inputMode !== MODE_CAMERA) return;
+
+    setIsCapturing(true);
+    let frameCount = 0;
 
     const captureAndPredict = async () => {
       if (!webcamRef.current) return;
 
       try {
+        const now = Date.now();
+        if (now - lastPredictionTime < 200) return;
+        
         const imageSrc = webcamRef.current.getScreenshot();
         if (!imageSrc) return;
+        
         const blob = await fetch(imageSrc).then(r => r.blob());
 
         const formData = new FormData();
-        formData.append("image", blob, "frame.jpg");
+        formData.append("image", blob, `frame_${frameCount++}.jpg`);
 
         const res = await API.post("/transcription/predict-camera/", formData, {
           headers: {
@@ -103,36 +144,52 @@ const StudentAnnouncementDetail = () => {
           },
         });
 
-        if (res.data.prediction) {
-          const prediction = res.data.prediction;
-          if (prediction === 'BACKSPACE') {
-            setNewComment(prev => prev.slice(0, -1));
-          } else if (prediction === ' ') {
-            setNewComment(prev => prev + ' ');
-          } else if (prediction && prediction !== 'nothing') {
-            setNewComment(prev => prev + prediction);
+        if (res.data && res.data.prediction) {
+          let prediction = res.data.prediction;
+          
+          if (prediction !== lastPredictionRef.current && prediction !== 'nothing') {
+            lastPredictionRef.current = prediction;
+            setLastPredictionTime(now);
+            
+            if (prediction === 'BACKSPACE') {
+              predictionQueueRef.current.push('BACKSPACE');
+            } else if (prediction === ' ') {
+              predictionQueueRef.current.push('SPACE');
+            } else {
+              predictionQueueRef.current.push(prediction);
+            }
+            
+            processPredictionQueue();
+          } else if (prediction === 'nothing') {
+            lastPredictionRef.current = '';
           }
         }
       } catch (err) {
         console.error("Inference failed", err);
       }
     };
-    cameraIntervalRef.current = setInterval(captureAndPredict, 1500);
+
+    cameraIntervalRef.current = setInterval(captureAndPredict, 250);
 
     return () => {
       if (cameraIntervalRef.current) {
         clearInterval(cameraIntervalRef.current);
         cameraIntervalRef.current = null;
       }
+      setIsCapturing(false);
+      predictionQueueRef.current = [];
     };
-  }, [inputMode]);
+  }, [inputMode, lastPredictionTime]);
 
   const switchMode = (mode) => {
     setInputMode(mode);
     setNewFile(null);
     setAiResultGenerated(false);
     setNewComment(""); 
+    lastPredictionRef.current = "";
+    predictionQueueRef.current = [];
   };
+  
   const processVideoWithAI = async () => {
     if (!newFile || !isVideoFile(newFile)) return false;
 
@@ -209,6 +266,8 @@ const StudentAnnouncementDetail = () => {
       setNewFile(null);
       setAiResultGenerated(false);
       setInputMode(MODE_TEXT); 
+      lastPredictionRef.current = "";
+      predictionQueueRef.current = [];
     } catch (err) {
       console.error("Post error:", err.response?.data || err);
       alert("Could not post comment. Please try again.");
@@ -226,6 +285,7 @@ const StudentAnnouncementDetail = () => {
       alert("Could not delete comment.");
     }
   };
+  
   const handleEdit = (id, text) => {
     setEditingId(id);
     setEditText(text);
@@ -253,6 +313,7 @@ const StudentAnnouncementDetail = () => {
     setEditingId(null);
     setEditText("");
   };
+  
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -281,6 +342,7 @@ const StudentAnnouncementDetail = () => {
       </div>
     );
   }
+  
   let actionLabel = "Comment";
   let actionColor = "bg-orange-500 hover:bg-orange-600";
 
@@ -469,8 +531,8 @@ const StudentAnnouncementDetail = () => {
                   facingMode: "user"
                 }}
               />
-              <p className="text-xs text-gray-400 italic">
-                Signs are being read in real-time and appended below.
+              <p className="text-xs text-teal-600 font-medium animate-pulse">
+                {isCapturing ? "🎥 Reading signs in real-time..." : "Camera is ready"}
               </p>
             </div>
           )}
@@ -511,7 +573,7 @@ const StudentAnnouncementDetail = () => {
                 inputMode === MODE_TEXT
                   ? "Write your comment…"
                   : inputMode === MODE_CAMERA
-                    ? "Signs appear here in real-time…"
+                    ? "Signs appear instantly as you sign..."
                     : aiResultGenerated
                       ? "Review AI text, then click Comment…"
                       : "Select a video, then click Process Video…"

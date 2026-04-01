@@ -141,7 +141,7 @@ const StudentVideoPage = () => {
             {/* --- PROGRESS BAR UI --- */}
             {isProcessingAI && (
               <div className="bg-blue-50 p-6 rounded-2xl border-2 border-blue-100 shadow-inner mb-6">
-                <div className="flex justify-between items-center mb-3">
+                {/* <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
                     <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                     SIGNBRIDGE AI: EXTRACTING GESTURES...
@@ -149,18 +149,18 @@ const StudentVideoPage = () => {
                   <span className="text-xs font-black text-blue-600 bg-white px-2 py-1 rounded-md border border-blue-200">
                     {processProgress}%
                   </span>
-                </div>
-                
+                </div> */}
+{/*                 
                 <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden border border-gray-300">
                   <div 
                     className="bg-gradient-to-r from-blue-500 to-blue-700 h-full transition-all duration-500 ease-out" 
                     style={{ width: `${processProgress}%` }}
                   ></div>
-                </div>
+                </div> */}
                 
-                <p className="text-[10px] text-blue-500 mt-2 text-center font-semibold italic">
+                {/* <p className="text-[10px] text-blue-500 mt-2 text-center font-semibold italic">
                   MediaPipe is tracking hand landmarks. Please wait while the sentence is formed.
-                </p>
+                </p> */}
               </div>
             )}
 
@@ -223,7 +223,7 @@ const StudentVideoPage = () => {
                   onClick={handleDownload}
                   className="px-6 py-4 bg-white text-gray-700 rounded-xl border-2 border-gray-200 font-bold hover:bg-gray-50 transition-all"
                 >
-                  DOWNLOAD TXT
+                  DOWNLOAD Notes
                 </button>
               )}
             </div>

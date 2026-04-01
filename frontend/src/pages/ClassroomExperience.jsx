@@ -11,7 +11,7 @@ const ClassroomExperience = () => {
         shadows
         camera={{ position: [-1.3, 1.5, -4], fov: 60 }}
       >
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={1.9} />
         <directionalLight
           position={[5, 10, 5]}
           intensity={1}
