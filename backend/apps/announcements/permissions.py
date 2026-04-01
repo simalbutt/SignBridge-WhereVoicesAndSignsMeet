@@ -49,11 +49,40 @@ class IsEnrolledOrTeacher(BasePermission):
 
 
 class IsAuthor(BasePermission):
+    """
+    Permission to check if the user is the author of the object.
+    Works for Announcement (author field) and Comment (user field).
+    """
+    
     def has_object_permission(self, request, view, obj):
-        return obj.user == request.user
+        # Check if the object has an 'author' field (for Announcement)
+        if hasattr(obj, 'author'):
+            return obj.author == request.user
+        # Check if the object has a 'user' field (for Comment)
+        elif hasattr(obj, 'user'):
+            return obj.user == request.user
+        return False
+
 
 class IsAuthorOrTeacher(BasePermission):
+    """
+    Permission that allows access if user is the author OR a teacher.
+    Works for both Announcement (author) and Comment (user) objects.
+    """
+    
     def has_object_permission(self, request, view, obj):
-        if obj.user == request.user:
+        if not request.user.is_authenticated:
+            return False
+            
+        # Check if user is the author (handles both author and user fields)
+        is_author = False
+        if hasattr(obj, 'author'):
+            is_author = obj.author == request.user
+        elif hasattr(obj, 'user'):
+            is_author = obj.user == request.user
+            
+        if is_author:
             return True
-        return request.user.is_authenticated and request.user.role == "teacher"
+            
+        # Check if user is a teacher
+        return request.user.role == "teacher"
