@@ -44,3 +44,8 @@ Thumbs.db
 *.tmp
 
 backend/apps/transcription/character_model.p
+backend\apps\text_to_gloss\model_files
+
+/animations/avatar.glb
+/public/animations/*.glb
+/public/alphabet/*.glb
