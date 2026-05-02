@@ -51,12 +51,15 @@ INSTALLED_APPS = [
     "apps.classrooms",
     "apps.announcements",
     'apps.transcription',
+    'apps.text_to_gloss',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders'
 ]
-
+import torch
+TRANSFORMERS_OFFLINE = True  # Use local model files
+TORCH_HOME = os.path.join(BASE_DIR, 'torch_cache')
 AUTH_USER_MODEL = "accounts.User"
 SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,

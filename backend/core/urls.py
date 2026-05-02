@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/classrooms/", include("apps.classrooms.urls")),
     path("api/transcription/", include("apps.transcription.urls")),
     path("api/", include("apps.announcements.urls")),
+    path('api/text-to-gloss/', include('apps.text_to_gloss.urls')),
     
 ]
 
